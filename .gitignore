@@ -1,0 +1,54 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# KLU Assignment Tracker — .gitignore
+# ──────────────────────────────────────────────────────────────────────────────
+
+# ── Node / Frontend ──────────────────────────────────────────────────────────
+frontend/node_modules/
+node_modules/
+frontend/dist/
+dist/
+frontend/dev-dist/
+dev-dist/
+
+# Environment files — never commit secret values
+.env
+.env.*
+!.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# ── Java / Maven ─────────────────────────────────────────────────────────────
+backend/assignment-tracker/target/
+target/
+backend/assignment-tracker/.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+*.war
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+logs/
+*.log
+backend/assignment-tracker/logs/
+
+# ── IDE & Editor ─────────────────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/settings.json
+.vscode/
+.project
+.classpath
+.settings/
+
+# ── OS Generated ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Secrets & Credentials ────────────────────────────────────────────────────
+vapid-private-key.txt
+vapid_private_key.txt
+secrets.properties
+application-production.properties
+*.key
+*.pem

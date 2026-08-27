@@ -1,5 +1,6 @@
 package com.klu.assignmenttracker.security;
 
+import com.klu.assignmenttracker.model.Role;
 import com.klu.assignmenttracker.model.User;
 import com.klu.assignmenttracker.repository.UserRepository;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

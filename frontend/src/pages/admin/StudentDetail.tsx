@@ -14,6 +14,7 @@ import { mockAssignments } from '../../data/mockData';
 import type { Student } from '../../types/user';
 import type { Assignment } from '../../types/assignment';
 import { CountdownChip } from '../../components/common/CountdownChip';
+import { getCleanStudentName } from '../../utils/userUtils';
 
 export default function StudentDetail() {
   const { studentId } = useParams<{ studentId: string }>();
@@ -66,26 +67,33 @@ export default function StudentDetail() {
       </button>
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-slate-700 flex items-center justify-center text-2xl font-bold text-white shadow-xl shrink-0">
-            {student.name?.[0] ?? student.studentId?.[0] ?? 'S'}
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-white">{student.name ?? student.studentId}</h2>
-            <p className="text-slate-400 text-sm">{student.email ?? '—'}</p>
-            <div className="flex items-center gap-2 mt-1.5">
-              <Badge status={student.status || 'active'} />
-              <code className="text-xs text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded">{student.studentId}</code>
+      {(() => {
+        const displayName = getCleanStudentName(student.name, student.studentId);
+        return (
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-slate-700 flex items-center justify-center text-2xl font-bold text-white shadow-xl shrink-0">
+                {displayName[0]?.toUpperCase() ?? 'S'}
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white leading-tight">{displayName}</h2>
+                <p className="text-xs text-slate-400 font-mono mt-0.5">{student.studentId}</p>
+                {student.email && (
+                  <p className="text-slate-400 text-xs mt-0.5">{student.email}</p>
+                )}
+                <div className="flex items-center gap-2 mt-1.5">
+                  <Badge status={student.status || 'active'} />
+                </div>
+              </div>
             </div>
+            <Button icon={<FiRefreshCw size={15} />} loading={syncing} onClick={handleSync}
+              className="!from-cyan-600 !to-slate-700 !shadow-cyan-500/30 shrink-0"
+            >
+              Sync Now
+            </Button>
           </div>
-        </div>
-        <Button icon={<FiRefreshCw size={15} />} loading={syncing} onClick={handleSync}
-          className="!from-cyan-600 !to-slate-700 !shadow-cyan-500/30 shrink-0"
-        >
-          Sync Now
-        </Button>
-      </div>
+        );
+      })()}
 
       {syncMsg && (
         <div className={`flex items-start gap-2.5 p-3.5 rounded-xl text-sm ${syncMsg.success ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border border-red-500/20 text-red-400'}`}>

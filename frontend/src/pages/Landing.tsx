@@ -85,19 +85,13 @@ export default function Landing() {
           portal and keeps you on top of every deadline — all in one beautiful dashboard.
         </p>
 
-        <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             to="/login"
             className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold text-base shadow-xl shadow-indigo-500/30 hover:from-violet-500 hover:to-indigo-500 transition-all duration-200 hover:scale-[1.02] active:scale-95"
           >
-            Student Login
+            Login
             <FiArrowRight size={18} />
-          </Link>
-          <Link
-            to="/register"
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl border border-white/15 text-white font-semibold text-base hover:bg-white/10 transition-all duration-200 hover:scale-[1.02] active:scale-95"
-          >
-            Create Account
           </Link>
         </div>
 
@@ -148,7 +142,7 @@ export default function Landing() {
               to="/login"
               className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold shadow-lg shadow-indigo-500/25 hover:from-violet-500 hover:to-indigo-500 transition-all duration-200 active:scale-95"
             >
-              Student Login <FiArrowRight size={16} />
+              Login <FiArrowRight size={16} />
             </Link>
             <Link
               to="/admin/login"

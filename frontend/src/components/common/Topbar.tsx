@@ -4,7 +4,7 @@ import { format, parseISO } from 'date-fns';
 
 interface TopbarProps {
   title: string;
-  subtitle?: string;
+  subtitle?: React.ReactNode;
   onMenuClick: () => void;
   lastSync?: string | null;
   onSync?: () => void;
@@ -46,8 +46,14 @@ export function Topbar({
 
         <div className="min-w-0">
           <p className="text-[11px] font-semibold text-indigo-400 uppercase tracking-wider">KLU Assignment Tracker</p>
-          <h1 className="text-base font-bold text-white truncate">{title}</h1>
-          {subtitle && <p className="text-xs text-slate-400 truncate">{subtitle}</p>}
+          <h1 className="text-base font-bold text-white truncate leading-tight">{title}</h1>
+          {subtitle && (
+            typeof subtitle === 'string' ? (
+              <p className="text-xs text-slate-400 truncate mt-0.5">{subtitle}</p>
+            ) : (
+              <div className="mt-0.5">{subtitle}</div>
+            )
+          )}
         </div>
       </div>
 

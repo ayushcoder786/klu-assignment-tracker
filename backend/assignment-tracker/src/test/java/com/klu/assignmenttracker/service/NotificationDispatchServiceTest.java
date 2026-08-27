@@ -3,7 +3,6 @@ package com.klu.assignmenttracker.service;
 import com.klu.assignmenttracker.model.Assignment;
 import com.klu.assignmenttracker.model.AssignmentStatus;
 import com.klu.assignmenttracker.model.NotificationPreferences;
-import com.klu.assignmenttracker.model.NotificationType;
 import com.klu.assignmenttracker.model.SentNotification;
 import com.klu.assignmenttracker.repository.AssignmentRepository;
 import com.klu.assignmenttracker.repository.NotificationPreferencesRepository;

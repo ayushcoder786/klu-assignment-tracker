@@ -9,7 +9,6 @@ import com.klu.assignmenttracker.security.JwtTokenProvider;
 import com.klu.assignmenttracker.security.MoodleTokenCache;
 import com.klu.assignmenttracker.service.NotificationDispatchService;
 import com.klu.assignmenttracker.service.NotificationSchedulerService;
-import com.klu.assignmenttracker.service.PushNotificationService;
 import com.klu.assignmenttracker.service.SyncService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -63,9 +62,6 @@ public class Milestone5IntegrationTest {
 
     @Autowired
     private MoodleTokenCache moodleTokenCache;
-
-    @Autowired
-    private PushNotificationService pushNotificationService;
 
     @Autowired
     private NotificationDispatchService notificationDispatchService;

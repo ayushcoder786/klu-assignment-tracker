@@ -4,6 +4,7 @@ import { FiUser, FiMail, FiHash, FiCalendar, FiBook } from 'react-icons/fi';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { useStudent } from '../../context/AuthContext';
+import { getCleanStudentName } from '../../utils/userUtils';
 
 interface InfoRowProps {
   icon: React.ReactNode;
@@ -37,12 +38,8 @@ function safeFormatDate(dateStr?: string | null, formatStr: string = 'MMM d, yyy
 
 export default function Profile() {
   const student = useStudent();
-
-  const initialLetter = student?.name
-    ? student.name[0]
-    : student?.studentId
-    ? student.studentId[0]
-    : 'S';
+  const displayName = getCleanStudentName(student?.name, 'KLU Student');
+  const initialLetter = displayName[0]?.toUpperCase() || 'S';
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -57,8 +54,10 @@ export default function Profile() {
           {initialLetter}
         </div>
         <div className="flex-1 text-center sm:text-left space-y-1">
-          <h3 className="text-xl font-bold text-white">{student?.name || student?.studentId || 'KLU Student'}</h3>
-          <p className="text-slate-400 text-xs font-mono">{student?.studentId}</p>
+          <h3 className="text-xl font-bold text-white leading-tight">{displayName}</h3>
+          {student?.studentId && (
+            <p className="text-slate-400 text-xs font-mono">{student.studentId}</p>
+          )}
           <div className="flex items-center justify-center sm:justify-start gap-2 pt-2">
             <Badge status={student?.status || 'active'} size="md" />
             <span className="text-xs text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 rounded-full font-mono">
@@ -71,8 +70,8 @@ export default function Profile() {
       {/* Info card */}
       <Card>
         <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Account Details</h3>
+        <InfoRow icon={<FiUser size={15} />} label="Full Name" value={displayName} />
         <InfoRow icon={<FiHash size={15} />} label="Student ID" value={student?.studentId} />
-        <InfoRow icon={<FiUser size={15} />} label="Full Name" value={student?.name || 'Synced from LMS'} />
         {student?.email && <InfoRow icon={<FiMail size={15} />} label="Email" value={student.email} />}
         <InfoRow
           icon={<FiCalendar size={15} />}

@@ -1,6 +1,7 @@
 import type { Student, AdminUser, AuthState } from '../types/user';
 import { mockAdminUser } from '../data/mockData';
 import { API_BASE } from './apiConfig';
+import { getCleanStudentName } from '../utils/userUtils';
 
 const STUDENT_SESSION_KEY = 'klu_student_session';
 const ADMIN_SESSION_KEY   = 'klu_admin_session';
@@ -40,6 +41,9 @@ export const authService = {
     const data = await response.json();            // { token, type, user }
     authService.persistToken(data.token);          // store JWT for subsequent requests
     const student = data.user as Student;
+    if (student && student.name) {
+      student.name = getCleanStudentName(student.name);
+    }
     authService.persistStudentSession(student);
     return student;
   },
@@ -103,7 +107,11 @@ export const authService = {
   getStoredSession(): AuthState {
     const studentData = sessionStorage.getItem(STUDENT_SESSION_KEY);
     if (studentData) {
-      return { isAuthenticated: true, user: JSON.parse(studentData), role: 'student' };
+      const student = JSON.parse(studentData) as Student;
+      if (student && student.name) {
+        student.name = getCleanStudentName(student.name);
+      }
+      return { isAuthenticated: true, user: student, role: 'student' };
     }
     const adminData = sessionStorage.getItem(ADMIN_SESSION_KEY);
     if (adminData) {

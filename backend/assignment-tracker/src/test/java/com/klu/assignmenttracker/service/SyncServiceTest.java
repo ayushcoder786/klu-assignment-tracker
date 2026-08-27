@@ -7,7 +7,6 @@ import com.klu.assignmenttracker.dto.moodle.MoodleAssignmentsResponse;
 import com.klu.assignmenttracker.dto.moodle.MoodleCourse;
 import com.klu.assignmenttracker.dto.moodle.MoodleSiteInfo;
 import com.klu.assignmenttracker.model.Assignment;
-import com.klu.assignmenttracker.model.AssignmentStatus;
 import com.klu.assignmenttracker.model.Course;
 import com.klu.assignmenttracker.model.Role;
 import com.klu.assignmenttracker.model.SyncLog;
@@ -30,7 +29,6 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 

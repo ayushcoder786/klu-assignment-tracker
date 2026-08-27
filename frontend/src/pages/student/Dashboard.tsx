@@ -21,6 +21,7 @@ import { assignmentService } from '../../services/assignmentService';
 import type { Assignment, Course, AssignmentSummary } from '../../types/assignment';
 import { useStudent } from '../../context/AuthContext';
 import { useSync } from '../../context/SyncContext';
+import { getCleanStudentName } from '../../utils/userUtils';
 
 type SectionFilter = 'all' | 'dueToday' | 'dueThisWeek' | 'upcoming' | 'overdue' | 'submitted';
 type SortOption = 'nearest' | 'furthest' | 'title';
@@ -140,7 +141,7 @@ export default function StudentDashboard() {
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  const studentDisplayName = student?.name ? student.name.split(' ')[0] : student?.studentId;
+  const studentDisplayName = getCleanStudentName(student?.name);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -158,6 +159,11 @@ export default function StudentDashboard() {
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
             {greeting}, {studentDisplayName}! 👋
           </h2>
+          {student?.studentId && (
+            <p className="text-xs text-indigo-300 font-mono mt-0.5">
+              {student.studentId}
+            </p>
+          )}
           <p className="text-slate-400 text-sm mt-1">
             You have <span className="text-amber-300 font-semibold">{summary.pending} pending</span> and{' '}
             <span className="text-red-400 font-semibold">{summary.overdue} overdue</span> assignments.

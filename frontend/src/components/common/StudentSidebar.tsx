@@ -3,6 +3,7 @@ import {
   FiHome, FiList, FiUser, FiSettings, FiLogOut, FiBookOpen,
 } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
+import { getCleanStudentName } from '../../utils/userUtils';
 
 // Bottom nav items for mobile PWA
 const bottomNavItems = [
@@ -120,26 +121,36 @@ export function StudentSidebar({ open, onClose }: StudentSidebarProps) {
         </nav>
 
         {/* User profile & logout */}
-        {student && (
-          <div className="p-3 border-t border-white/10">
-            <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 border border-white/5 mb-2">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-sm font-bold text-white shadow-md">
-                {student.name ? student.name[0] : (student.studentId ? student.studentId[0] : 'S')}
+        {student && (() => {
+          const displayName = getCleanStudentName(student.name);
+
+          return (
+            <div className="p-3 border-t border-white/10">
+              <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 border border-white/5 mb-2">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-sm font-bold text-white shadow-md shrink-0">
+                  {displayName[0].toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-white truncate leading-tight">
+                    {displayName}
+                  </p>
+                  {student.studentId && (
+                    <p className="text-[10px] text-slate-400 font-mono truncate leading-normal mt-0.5">
+                      {student.studentId}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-white truncate">{student.name || 'Student'}</p>
-                <p className="text-[10px] text-slate-400 truncate font-mono">{student.studentId}</p>
-              </div>
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all duration-150"
+              >
+                <FiLogOut size={15} />
+                <span>Log out</span>
+              </button>
             </div>
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all duration-150"
-            >
-              <FiLogOut size={15} />
-              <span>Log out</span>
-            </button>
-          </div>
-        )}
+          );
+        })()}
       </aside>
     </>
   );

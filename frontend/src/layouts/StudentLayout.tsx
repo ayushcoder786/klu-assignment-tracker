@@ -6,11 +6,14 @@ import { useAuth } from '../context/AuthContext';
 import { SyncProvider, useSync } from '../context/SyncContext';
 import type { Student } from '../types/user';
 
+import { getCleanStudentName } from '../utils/userUtils';
+
 function StudentLayoutContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { authState } = useAuth();
   const { syncing, triggerSync, lastSyncMessage, lastSyncError } = useSync();
   const student = authState.user as Student | null;
+  const displayName = getCleanStudentName(student?.name);
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-950 via-indigo-950/20 to-slate-950 overflow-hidden text-slate-100">
@@ -18,7 +21,16 @@ function StudentLayoutContent() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Topbar
           title="Student Dashboard"
-          subtitle={student?.name ? `${student.name} (${student.studentId})` : student?.studentId}
+          subtitle={
+            student ? (
+              <div className="flex flex-col">
+                <span className="text-xs font-semibold text-slate-200 leading-tight">{displayName}</span>
+                {student.studentId && (
+                  <span className="text-[10px] text-slate-400 font-mono leading-normal mt-0.5">{student.studentId}</span>
+                )}
+              </div>
+            ) : undefined
+          }
           onMenuClick={() => setSidebarOpen(true)}
           lastSync={student?.lastSync ?? null}
           onSync={triggerSync}

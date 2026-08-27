@@ -75,7 +75,7 @@ public class NotificationSchedulerService {
         log.info("Starting scheduled LMS sync for all students.");
 
         List<User> students = userRepository.findAll().stream()
-                .filter(u -> u.getRole() == Role.STUDENT)
+                .filter(u -> u.getStudentId() != null && !u.getStudentId().isBlank())
                 .toList();
 
         log.info("Found {} students to sync.", students.size());
@@ -105,7 +105,7 @@ public class NotificationSchedulerService {
                 synced++;
             } catch (Exception e) {
                 // Log the error but NEVER stop the loop — one student's failure must not affect others
-                log.error("Scheduled sync failed for studentId={}: {}", student.getStudentId(), e.getMessage());
+                log.warn("Scheduled sync encountered error for studentId={}: {}", student.getStudentId(), e.getMessage());
                 failed++;
             }
         }

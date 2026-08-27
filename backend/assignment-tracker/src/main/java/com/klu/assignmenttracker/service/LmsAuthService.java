@@ -133,17 +133,33 @@ public class LmsAuthService {
             log.warn("LMS token endpoint returned unexpected HTTP {} for studentId={}",
                     response.statusCode(), studentId);
             throw new LmsUnavailableException(
-                    "KLU LMS returned an unexpected response. Please try again later.");
+                    "KLU LMS is temporarily unavailable (HTTP " + response.statusCode() + "). Please try again later.");
+        }
+
+        String rawBody = response.body();
+        if (rawBody == null || rawBody.isBlank()) {
+            log.warn("KLU LMS token endpoint returned empty body for studentId={}", studentId);
+            throw new LmsUnavailableException("KLU LMS returned an empty response. Please try again later.");
+        }
+
+        String trimmedBody = rawBody.trim();
+        if (trimmedBody.startsWith("Error:") || trimmedBody.contains("Database connection failed")
+                || trimmedBody.contains("<html") || trimmedBody.contains("<!DOCTYPE")
+                || trimmedBody.contains("Fatal error")) {
+            log.warn("KLU LMS external database/server failure for studentId={}: {}",
+                    studentId, trimmedBody.length() > 150 ? trimmedBody.substring(0, 150) : trimmedBody);
+            throw new LmsUnavailableException(
+                    "KLU LMS is temporarily unavailable (external LMS database connection failed). Please try again later.");
         }
 
         Map<String, Object> body;
         try {
-            body = objectMapper.readValue(response.body(),
+            body = objectMapper.readValue(rawBody,
                     new TypeReference<Map<String, Object>>() {});
         } catch (IOException e) {
             log.error("Failed to parse LMS response for studentId={}: {}", studentId, e.getMessage());
             throw new LmsUnavailableException(
-                    "KLU LMS returned an unrecognised response. Please try again later.");
+                    "KLU LMS returned an unrecognised response. Please try again later.", e);
         }
 
         // ── Evaluate result ────────────────────────────────────────────────────

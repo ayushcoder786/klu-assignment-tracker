@@ -189,10 +189,24 @@ public class MoodleWebService {
 
         if (response.statusCode() != 200) {
             log.warn("Moodle REST endpoint returned HTTP {} for function {}", response.statusCode(), wsFunction);
-            throw new LmsUnavailableException("KLU LMS returned HTTP " + response.statusCode());
+            throw new LmsUnavailableException("KLU LMS is temporarily unavailable (HTTP " + response.statusCode() + "). Please try again later.");
         }
 
         String body = response.body();
+        if (body == null || body.isBlank()) {
+            log.warn("Moodle REST endpoint returned empty body for function {}", wsFunction);
+            throw new LmsUnavailableException("KLU LMS returned an empty response.");
+        }
+
+        String trimmed = body.trim();
+        if (trimmed.startsWith("Error:") || trimmed.contains("Database connection failed")
+                || trimmed.contains("<html") || trimmed.contains("<!DOCTYPE")
+                || trimmed.contains("Fatal error")) {
+            log.warn("KLU LMS external database/server error during function {}: {}", wsFunction,
+                    trimmed.length() > 150 ? trimmed.substring(0, 150) : trimmed);
+            throw new LmsUnavailableException("KLU LMS is temporarily unavailable (external LMS database connection failed).");
+        }
+
         checkMoodleException(body, wsFunction);
         return body;
     }
@@ -209,7 +223,7 @@ public class MoodleWebService {
                 throw new LmsUnavailableException("Moodle API error (" + errorcode + "): " + message);
             }
         } catch (IOException ignored) {
-            // Not a JSON object or array error node, handled during parsing
+            // Handled during higher-level parsing
         }
     }
 

@@ -165,4 +165,25 @@ class SyncServiceTest {
         assertNotNull(response);
         verify(moodleWebService).getSiteInfo("cached-token");
     }
+
+    @Test
+    void testSyncUserAssignments_LmsUnavailable_ReturnsFailedGracefully() {
+        User user = User.builder()
+                .id("user-123")
+                .studentId("2200030001")
+                .role(Role.STUDENT)
+                .build();
+
+        SyncLog dummyLog = SyncLog.builder().id("log-1").userId(user.getId()).build();
+        when(syncLogRepository.save(any(SyncLog.class))).thenReturn(dummyLog);
+
+        when(moodleWebService.getSiteInfo("failing-token"))
+                .thenThrow(new com.klu.assignmenttracker.exception.LmsUnavailableException(
+                        "KLU LMS is temporarily unavailable (external LMS database connection failed)."));
+
+        SyncResponse response = syncService.syncUserAssignments(user, "failing-token");
+
+        assertNotNull(response);
+        assertEquals("LMS is temporarily unavailable. Please try syncing again later.", response.getMessage());
+    }
 }

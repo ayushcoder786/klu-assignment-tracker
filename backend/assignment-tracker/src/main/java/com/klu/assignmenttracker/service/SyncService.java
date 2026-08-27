@@ -22,6 +22,7 @@ import com.klu.assignmenttracker.repository.UserRepository;
 import com.klu.assignmenttracker.security.MoodleTokenCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -31,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -63,6 +65,30 @@ public class SyncService {
     }
 
     /**
+     * Asynchronously perform Moodle synchronization in the background.
+     * Used during student login so the login HTTP request completes immediately.
+     *
+     * @param user        the user being synchronized
+     * @param moodleToken active Moodle Web Service token
+     * @return CompletableFuture of SyncResponse
+     */
+    @Async("taskExecutor")
+    public CompletableFuture<SyncResponse> syncUserAssignmentsAsync(User user, String moodleToken) {
+        log.info("Triggered asynchronous background sync for studentId={}", user.getStudentId());
+        try {
+            SyncResponse response = syncUserAssignments(user, moodleToken);
+            return CompletableFuture.completedFuture(response);
+        } catch (Exception e) {
+            log.warn("Background sync encountered error for studentId={}: {}", user.getStudentId(), e.getMessage());
+            return CompletableFuture.completedFuture(
+                    SyncResponse.builder()
+                            .message("LMS is temporarily unavailable. Please try syncing again later.")
+                            .build()
+            );
+        }
+    }
+
+    /**
      * Perform a live sync with KLU Moodle for the specified user using the provided Moodle token.
      *
      * <p>Steps:
@@ -74,6 +100,10 @@ public class SyncService {
      *   <li>Check submission/completion status for each assignment.</li>
      *   <li>Update user's lastSync timestamp and complete the sync log with status SUCCESS.</li>
      * </ol>
+     *
+     * <p><strong>Fault tolerance:</strong> If the external KLU LMS fails or is unreachable,
+     * the error is caught, logged, and marked as FAILED with a friendly message.
+     * Existing assignments and user data in MongoDB are strictly preserved.
      *
      * @param user        the user being synchronized
      * @param moodleToken active Moodle Web Service token
@@ -93,11 +123,11 @@ public class SyncService {
         try {
             // ── Step 1: Get Site Info (Moodle userId & full name) ──────────────
             MoodleSiteInfo siteInfo = moodleWebService.getSiteInfo(moodleToken);
-            if (siteInfo.getFullname() != null && !siteInfo.getFullname().isBlank()) {
+            if (siteInfo != null && siteInfo.getFullname() != null && !siteInfo.getFullname().isBlank()) {
                 user.setName(siteInfo.getFullname());
             }
 
-            long moodleUserId = siteInfo.getUserid() != null ? siteInfo.getUserid() : 0L;
+            long moodleUserId = (siteInfo != null && siteInfo.getUserid() != null) ? siteInfo.getUserid() : 0L;
             if (moodleUserId == 0L) {
                 throw new IllegalStateException("Moodle site info did not return a valid user ID.");
             }
@@ -159,7 +189,7 @@ public class SyncService {
 
                             // Check submission status from Moodle
                             AssignmentStatus status = determineAssignmentStatus(
-                                    moodleToken, item.getId(), dueDate);
+                                     moodleToken, item.getId(), dueDate);
 
                             String cleanDescription = stripHtml(item.getIntro());
 
@@ -206,16 +236,16 @@ public class SyncService {
                     .build();
 
         } catch (Exception e) {
-            log.error("Failed to synchronize assignments from Moodle for studentId={}: {}",
-                    user.getStudentId(), e.getMessage(), e);
+            log.warn("KLU LMS assignment sync failed for studentId={}: {}",
+                    user.getStudentId(), e.getMessage());
 
             syncLog.setStatus(SyncStatus.FAILED);
             syncLog.setCompletedAt(LocalDateTime.now());
-            syncLog.setErrorMessage(e.getMessage());
+            syncLog.setErrorMessage("LMS is temporarily unavailable. Please try syncing again later.");
             SyncLog savedLog = syncLogRepository.save(syncLog);
 
             return SyncResponse.builder()
-                    .message("Failed to synchronize assignments from KLU Moodle: " + e.getMessage())
+                    .message("LMS is temporarily unavailable. Please try syncing again later.")
                     .syncLog(SyncLogResponse.fromSyncLog(savedLog))
                     .build();
         }

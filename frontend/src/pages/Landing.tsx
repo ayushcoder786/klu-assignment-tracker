@@ -51,16 +51,10 @@ export default function Landing() {
         </div>
         <div className="flex items-center gap-3">
           <Link
-            to="/admin/login"
-            className="text-xs text-slate-400 hover:text-slate-200 transition-colors hidden sm:block"
-          >
-            Admin Portal
-          </Link>
-          <Link
             to="/login"
-            className="px-4 py-2 text-sm font-semibold text-white border border-white/15 rounded-xl hover:bg-white/10 transition-all duration-200"
+            className="px-5 py-2 text-sm font-semibold text-white bg-white/10 border border-white/15 rounded-xl hover:bg-white/15 transition-all duration-200"
           >
-            Sign In
+            Login
           </Link>
         </div>
       </header>
@@ -137,18 +131,12 @@ export default function Landing() {
         <div className="max-w-2xl mx-auto p-10 rounded-3xl border border-violet-500/20 bg-gradient-to-br from-violet-500/8 to-indigo-500/8 backdrop-blur-sm">
           <h2 className="text-3xl font-bold text-white mb-3">Ready to Get Started?</h2>
           <p className="text-slate-400 mb-8">Join thousands of KLU students tracking their assignments effortlessly.</p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <div className="flex justify-center">
             <Link
               to="/login"
-              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold shadow-lg shadow-indigo-500/25 hover:from-violet-500 hover:to-indigo-500 transition-all duration-200 active:scale-95"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold shadow-lg shadow-indigo-500/25 hover:from-violet-500 hover:to-indigo-500 transition-all duration-200 active:scale-95 hover:scale-[1.02]"
             >
               Login <FiArrowRight size={16} />
-            </Link>
-            <Link
-              to="/admin/login"
-              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-white/15 text-slate-300 font-semibold hover:bg-white/10 transition-all duration-200 active:scale-95"
-            >
-              <FiShield size={16} /> Admin Access
             </Link>
           </div>
         </div>

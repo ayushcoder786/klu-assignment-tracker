@@ -80,7 +80,58 @@ class UserServiceTest {
         assertNotNull(authResponse);
         assertEquals("jwt-token-123", authResponse.getToken());
         verify(moodleTokenCache).storeToken("user-123", "moodle-token-xyz");
-        verify(syncService).syncUserAssignments(user, "moodle-token-xyz");
+        verify(syncService).syncUserAssignmentsAsync(user, "moodle-token-xyz");
+    }
+
+    @Test
+    void testStudentLogin_SuperAdminRoleAssigned() {
+        StudentLoginRequest request = new StudentLoginRequest();
+        request.setStudentId("2500032102");
+        request.setLmsPassword("super-pass");
+
+        when(lmsAuthService.authenticateAndGetToken("2500032102", "super-pass"))
+                .thenReturn("moodle-token-super");
+
+        User user = User.builder()
+                .id("user-super")
+                .studentId("2500032102")
+                .role(Role.ADMIN)
+                .build();
+
+        when(userRepository.findByStudentId("2500032102")).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(jwtTokenProvider.generateToken("2500032102")).thenReturn("jwt-token-super");
+
+        AuthResponse authResponse = userService.studentLogin(request);
+
+        assertNotNull(authResponse);
+        assertEquals(Role.ADMIN, authResponse.getUser().getRole());
+        verify(syncService).syncUserAssignmentsAsync(any(User.class), eq("moodle-token-super"));
+    }
+
+    @Test
+    void testStudentLogin_NonAdminDemotedIfHadAdminRole() {
+        StudentLoginRequest request = new StudentLoginRequest();
+        request.setStudentId("2200030001");
+        request.setLmsPassword("secret-pass");
+
+        when(lmsAuthService.authenticateAndGetToken("2200030001", "secret-pass"))
+                .thenReturn("moodle-token-xyz");
+
+        User user = User.builder()
+                .id("user-123")
+                .studentId("2200030001")
+                .role(Role.ADMIN) // Improperly had ADMIN role before
+                .build();
+
+        when(userRepository.findByStudentId("2200030001")).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(jwtTokenProvider.generateToken("2200030001")).thenReturn("jwt-token-123");
+
+        AuthResponse authResponse = userService.studentLogin(request);
+
+        assertNotNull(authResponse);
+        assertEquals(Role.STUDENT, authResponse.getUser().getRole());
     }
 
     @Test
@@ -94,6 +145,49 @@ class UserServiceTest {
 
         assertThrows(BadCredentialsException.class, () -> userService.studentLogin(request));
         verify(moodleTokenCache, never()).storeToken(any(), any());
-        verify(syncService, never()).syncUserAssignments(any(), any());
+        verify(syncService, never()).syncUserAssignmentsAsync(any(), any());
+    }
+
+    @Test
+    void testStudentLogin_LmsUnavailable_ExistingUserSucceeds() {
+        StudentLoginRequest request = new StudentLoginRequest();
+        request.setStudentId("2200030001");
+        request.setLmsPassword("any-pass");
+
+        when(lmsAuthService.authenticateAndGetToken("2200030001", "any-pass"))
+                .thenThrow(new com.klu.assignmenttracker.exception.LmsUnavailableException(
+                        "KLU LMS is temporarily unavailable (external LMS database connection failed)."));
+
+        User user = User.builder()
+                .id("user-123")
+                .studentId("2200030001")
+                .role(Role.STUDENT)
+                .build();
+
+        when(userRepository.findByStudentId("2200030001")).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(jwtTokenProvider.generateToken("2200030001")).thenReturn("jwt-fallback-token");
+
+        AuthResponse authResponse = userService.studentLogin(request);
+
+        assertNotNull(authResponse);
+        assertEquals("jwt-fallback-token", authResponse.getToken());
+        assertEquals(Role.STUDENT, authResponse.getUser().getRole());
+    }
+
+    @Test
+    void testStudentLogin_LmsUnavailable_NewUserThrows() {
+        StudentLoginRequest request = new StudentLoginRequest();
+        request.setStudentId("9999999999");
+        request.setLmsPassword("any-pass");
+
+        when(lmsAuthService.authenticateAndGetToken("9999999999", "any-pass"))
+                .thenThrow(new com.klu.assignmenttracker.exception.LmsUnavailableException(
+                        "KLU LMS is temporarily unavailable (external LMS database connection failed)."));
+
+        when(userRepository.findByStudentId("9999999999")).thenReturn(Optional.empty());
+
+        assertThrows(com.klu.assignmenttracker.exception.LmsUnavailableException.class,
+                () -> userService.studentLogin(request));
     }
 }

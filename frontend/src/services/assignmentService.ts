@@ -3,13 +3,28 @@ import { authService } from './authService';
 import { isToday, isPast, addDays, isThisWeek, parseISO } from 'date-fns';
 import { API_BASE } from './apiConfig';
 
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 25000): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (err) {
+    if ((err as Error).name === 'AbortError') {
+      throw new Error('Request timed out. Please try again.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 export const assignmentService = {
   /**
    * Fetch all assignments for the currently authenticated student.
    * GET /api/assignments
    */
   async getAssignments(): Promise<Assignment[]> {
-    const response = await fetch(`${API_BASE}/assignments`, {
+    const response = await fetchWithTimeout(`${API_BASE}/assignments`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -33,7 +48,7 @@ export const assignmentService = {
    * GET /api/courses
    */
   async getCourses(): Promise<Course[]> {
-    const response = await fetch(`${API_BASE}/courses`, {
+    const response = await fetchWithTimeout(`${API_BASE}/courses`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -57,7 +72,7 @@ export const assignmentService = {
    * GET /api/assignments/:id
    */
   async getAssignmentById(id: string): Promise<Assignment | null> {
-    const response = await fetch(`${API_BASE}/assignments/${id}`, {
+    const response = await fetchWithTimeout(`${API_BASE}/assignments/${id}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -78,27 +93,48 @@ export const assignmentService = {
    * POST /api/sync
    */
   async triggerSync(): Promise<{ success: boolean; message: string; syncLog?: any }> {
-    const response = await fetch(`${API_BASE}/sync`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...authService.authHeaders(),
-      },
-    });
+    try {
+      const response = await fetchWithTimeout(`${API_BASE}/sync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authService.authHeaders(),
+        },
+      }, 45000); // 45s for live Moodle sync
 
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error('Session expired. Please log in again.');
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Session expired. Please log in again.');
+        }
+        if (response.status === 503 || response.status === 500 || response.status === 502 || response.status === 504) {
+          return {
+            success: false,
+            message: 'LMS is temporarily unavailable. Please try syncing again later.',
+          };
+        }
+        throw new Error(`Sync failed (HTTP ${response.status})`);
       }
-      throw new Error(`Sync failed (HTTP ${response.status})`);
-    }
 
-    const data = await response.json();
-    return {
-      success: true,
-      message: data.message || 'Synchronization completed.',
-      syncLog: data.syncLog,
-    };
+      const data = await response.json();
+      const rawMessage = data.message || 'Synchronization completed.';
+      const isFailed = (data.syncLog && data.syncLog.status === 'FAILED')
+        || rawMessage.toLowerCase().includes('unavailable')
+        || rawMessage.toLowerCase().includes('failed');
+
+      return {
+        success: !isFailed,
+        message: isFailed ? 'LMS is temporarily unavailable. Please try syncing again later.' : rawMessage,
+        syncLog: data.syncLog,
+      };
+    } catch (err: unknown) {
+      if ((err as Error).name === 'AbortError') {
+        return {
+          success: false,
+          message: 'LMS is temporarily unavailable (request timed out). Please try syncing again later.',
+        };
+      }
+      throw err;
+    }
   },
 
   /**

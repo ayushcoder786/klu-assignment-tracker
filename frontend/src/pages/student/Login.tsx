@@ -1,15 +1,37 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { FiUser, FiLock, FiBookOpen, FiAlertCircle } from 'react-icons/fi';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FiUser, FiLock, FiBookOpen, FiAlertCircle, FiServer } from 'react-icons/fi';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { useAuth } from '../../context/AuthContext';
 
-export default function StudentLogin() {
-  const { studentLogin, loading } = useAuth();
+export default function Login() {
+  const { login, loading } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ studentId: '', lmsPassword: '' });
   const [error, setError] = useState('');
+  const [loadingStep, setLoadingStep] = useState(0);
+
+  // Progressive loading status timer
+  useEffect(() => {
+    let timer1: ReturnType<typeof setTimeout>;
+    let timer2: ReturnType<typeof setTimeout>;
+    if (loading) {
+      setLoadingStep(1); // 0-3s: Authenticating
+      timer1 = setTimeout(() => {
+        setLoadingStep(2); // 3-8s: Verifying with KLU LMS
+      }, 3000);
+      timer2 = setTimeout(() => {
+        setLoadingStep(3); // 8s+: Server waking up (Render cold start)
+      }, 8000);
+    } else {
+      setLoadingStep(0);
+    }
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, [loading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,11 +41,18 @@ export default function StudentLogin() {
       return;
     }
     try {
-      await studentLogin(form.studentId.trim(), form.lmsPassword);
+      await login(form.studentId.trim(), form.lmsPassword);
       navigate('/dashboard');
     } catch (err: unknown) {
       setError((err as Error).message ?? 'Invalid Student ID or password.');
     }
+  };
+
+  const getLoadingButtonText = () => {
+    if (loadingStep === 1) return 'Logging In...';
+    if (loadingStep === 2) return 'Verifying with LMS...';
+    if (loadingStep === 3) return 'Waking up server...';
+    return 'Login';
   };
 
   return (
@@ -42,8 +71,10 @@ export default function StudentLogin() {
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-xl shadow-indigo-500/40 mb-4">
               <FiBookOpen size={26} className="text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white">Student Login</h1>
-            <p className="text-sm text-slate-500 mt-1">Sign in with your KLU Student ID and LMS Password</p>
+            <h1 className="text-2xl font-bold text-white">Login</h1>
+            <p className="text-sm text-slate-400 mt-1 text-center">
+              Sign in with your KLU Student ID and LMS Password
+            </p>
           </div>
 
           {/* Error */}
@@ -54,11 +85,30 @@ export default function StudentLogin() {
             </div>
           )}
 
+          {/* Cold-start informational banner */}
+          {loading && loadingStep >= 2 && (
+            <div className="mb-5 flex items-start gap-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs animate-pulse">
+              <FiServer size={16} className="shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium">
+                  {loadingStep === 3
+                    ? 'Cloud server is waking up from idle...'
+                    : 'Connecting to KLU LMS API...'}
+                </p>
+                <p className="text-amber-300/80 text-[11px] mt-0.5">
+                  {loadingStep === 3
+                    ? 'Render free instances spin down after inactivity. Please hold on a few seconds.'
+                    : 'Authenticating your credentials with KLU Moodle.'}
+                </p>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             <Input
               id="student-id"
-              label="Student ID"
-              placeholder="e.g. 2200030001"
+              label="Student ID / KLU ID"
+              placeholder="e.g. 2500032102"
               icon={<FiUser size={16} />}
               value={form.studentId}
               onChange={e => setForm(f => ({ ...f, studentId: e.target.value }))}
@@ -83,18 +133,10 @@ export default function StudentLogin() {
               size="lg"
               loading={loading}
             >
-              Sign In
+              {loading ? getLoadingButtonText() : 'Login'}
             </Button>
           </form>
         </div>
-
-        {/* Admin link */}
-        <p className="mt-4 text-center text-xs text-slate-600">
-          Are you an admin?{' '}
-          <Link to="/admin/login" className="text-slate-400 hover:text-slate-200 transition-colors">
-            Admin Login →
-          </Link>
-        </p>
       </div>
     </div>
   );

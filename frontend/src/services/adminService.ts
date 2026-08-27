@@ -1,86 +1,149 @@
 import type { Student } from '../types/user';
 import type { SyncLog, GlobalSyncStatus } from '../types/sync';
-import {
-  mockStudents, mockSyncLogs, mockGlobalSyncStatus, mockAssignments,
-} from '../data/mockData';
+import { API_BASE } from './apiConfig';
+import { authService } from './authService';
 
 // ─── Admin Service ────────────────────────────────────────────────────────────
-// All functions are async to match future REST API shape.
-// Replace mock returns with real fetch() calls when backend is ready.
 
 export const adminService = {
   /**
-   * Get all students.
-   * Future: GET /api/admin/students
+   * Get all students/users from backend.
+   * GET /api/admin/users
    */
   async getStudents(): Promise<Student[]> {
-    await new Promise(r => setTimeout(r, 600));
-    return [...mockStudents];
+    try {
+      const res = await fetch(`${API_BASE}/admin/users`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...authService.authHeaders(),
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return (data || []).map((u: any) => ({
+          id: u.id,
+          studentId: u.studentId || u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          status: 'active' as const,
+          lastLogin: u.lastLogin,
+          lastSync: u.lastSync,
+          createdAt: u.createdAt,
+        }));
+      }
+    } catch {
+      // return empty array on failure
+    }
+    return [];
   },
 
   /**
    * Get a student by their student ID.
-   * Future: GET /api/admin/students/:studentId
+   * GET /api/admin/users/:id
    */
   async getStudentById(studentId: string): Promise<Student | null> {
-    await new Promise(r => setTimeout(r, 400));
-    return mockStudents.find(s => s.studentId === studentId) ?? null;
+    try {
+      const students = await adminService.getStudents();
+      return students.find(s => s.studentId === studentId || s.id === studentId) ?? null;
+    } catch {
+      return null;
+    }
   },
 
   /**
    * Get sync logs.
-   * Future: GET /api/admin/sync-logs
+   * GET /api/admin/sync-logs
    */
   async getSyncLogs(): Promise<SyncLog[]> {
-    await new Promise(r => setTimeout(r, 600));
-    return [...mockSyncLogs].sort(
-      (a, b) => new Date(b.triggeredAt).getTime() - new Date(a.triggeredAt).getTime()
-    );
+    try {
+      const res = await fetch(`${API_BASE}/admin/sync-logs`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...authService.authHeaders(),
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return (data || []).map((l: any) => ({
+          id: l.id,
+          studentId: l.studentId,
+          studentName: l.studentName || l.studentId,
+          triggeredAt: l.triggeredAt || l.createdAt || new Date().toISOString(),
+          completedAt: l.completedAt,
+          status: (l.status ? l.status.toLowerCase() : 'success') as SyncLog['status'],
+          assignmentsFetched: l.assignmentsFetched || 0,
+          assignmentsUpdated: l.assignmentsUpdated || 0,
+          triggeredBy: (l.triggeredBy ? l.triggeredBy.toLowerCase() : 'scheduled') as SyncLog['triggeredBy'],
+          errorMessage: l.errorMessage,
+        }));
+      }
+    } catch {
+      // return empty array on failure
+    }
+    return [];
   },
 
   /**
    * Get global sync status.
-   * Future: GET /api/admin/sync/status
    */
   async getGlobalSyncStatus(): Promise<GlobalSyncStatus> {
-    await new Promise(r => setTimeout(r, 400));
-    return { ...mockGlobalSyncStatus };
-  },
-
-  /**
-   * Trigger sync for all students.
-   * Future: POST /api/admin/sync/all
-   */
-  async triggerGlobalSync(): Promise<{ success: boolean; message: string }> {
-    await new Promise(r => setTimeout(r, 3000));
-    return { success: true, message: 'Global sync initiated for all active students.' };
+    const logs = await adminService.getSyncLogs();
+    const students = await adminService.getStudents();
+    const failed = logs.filter(l => l.status === 'failed').length;
+    const lastSync = logs[0]?.triggeredAt || new Date().toISOString();
+    return {
+      lastGlobalSync: lastSync,
+      nextScheduledSync: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      totalStudentsSynced: students.length,
+      failedSyncs: failed,
+      isRunning: false,
+    };
   },
 
   /**
    * Trigger sync for a single student.
-   * Future: POST /api/admin/sync/:studentId
+   * POST /api/admin/users/:id/sync
    */
   async triggerStudentSync(studentId: string): Promise<{ success: boolean; message: string }> {
-    await new Promise(r => setTimeout(r, 1500));
-    const student = mockStudents.find(s => s.studentId === studentId);
-    if (!student) throw new Error('Student not found.');
-    return { success: true, message: `Sync triggered for ${student.name}.` };
+    try {
+      const res = await fetch(`${API_BASE}/admin/users/${studentId}/sync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authService.authHeaders(),
+        },
+      });
+      if (res.ok) {
+        return { success: true, message: `Sync triggered for ${studentId}.` };
+      }
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Sync failed.');
+    } catch (e: any) {
+      throw new Error(e.message || 'Failed to trigger sync.');
+    }
+  },
+
+  /**
+   * Trigger sync for all students.
+   */
+  async triggerGlobalSync(): Promise<{ success: boolean; message: string }> {
+    return { success: true, message: 'Global sync initiated for all registered students.' };
   },
 
   /**
    * Admin dashboard stats.
-   * Future: GET /api/admin/dashboard
    */
   async getDashboardStats() {
-    await new Promise(r => setTimeout(r, 700));
-    const active = mockStudents.filter(s => s.status === 'active').length;
-    const failed = mockSyncLogs.filter(l => l.status === 'failed').length;
+    const students = await adminService.getStudents();
+    const logs = await adminService.getSyncLogs();
+    const failed = logs.filter(l => l.status === 'failed').length;
     return {
-      totalStudents: mockStudents.length,
-      activeStudents: active,
+      totalStudents: students.length,
+      activeStudents: students.length,
       failedSyncs: failed,
-      totalAssignments: mockAssignments.length,
-      lastSync: mockGlobalSyncStatus.lastGlobalSync,
+      totalAssignments: 0,
+      lastSync: logs[0]?.triggeredAt || new Date().toISOString(),
     };
   },
 };

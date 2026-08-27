@@ -27,16 +27,19 @@ export function SyncProvider({ children }: { children: ReactNode }) {
 
     try {
       const res = await assignmentService.triggerSync();
-      setLastSyncMessage(res.message);
-      // Trigger re-render across all consumers
-      setRefreshKey(k => k + 1);
-
-      // Update student lastSync timestamp in session if user object exists
-      if (authState.user) {
-        (authState.user as any).lastSync = new Date().toISOString();
+      if (!res.success || res.message.toLowerCase().includes('unavailable')) {
+        setLastSyncError(res.message);
+      } else {
+        setLastSyncMessage(res.message);
+        // Update student lastSync timestamp in session if user object exists
+        if (authState.user) {
+          (authState.user as any).lastSync = new Date().toISOString();
+        }
       }
+      // Trigger re-render across all consumers so existing assignments are refreshed
+      setRefreshKey(k => k + 1);
     } catch (err: unknown) {
-      setLastSyncError((err as Error).message || 'Failed to sync with KLU LMS');
+      setLastSyncError((err as Error).message || 'LMS is temporarily unavailable. Please try syncing again later.');
     } finally {
       setSyncing(false);
     }

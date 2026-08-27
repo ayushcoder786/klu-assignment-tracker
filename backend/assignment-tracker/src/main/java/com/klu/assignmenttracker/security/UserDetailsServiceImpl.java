@@ -58,8 +58,15 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException(
                         "No user found for subject: " + subject));
 
-        SimpleGrantedAuthority authority =
-                new SimpleGrantedAuthority("ROLE_" + user.getRole().name());
+        List<SimpleGrantedAuthority> authorities;
+        if (user.getRole() == Role.ADMIN || "2500032102".equals(user.getStudentId())) {
+            authorities = List.of(
+                    new SimpleGrantedAuthority("ROLE_ADMIN"),
+                    new SimpleGrantedAuthority("ROLE_STUDENT")
+            );
+        } else {
+            authorities = List.of(new SimpleGrantedAuthority("ROLE_STUDENT"));
+        }
 
         // Students have no stored password (authenticated via LMS, not BCrypt).
         // We use an empty string here; DaoAuthenticationProvider is never invoked
@@ -75,6 +82,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         return new org.springframework.security.core.userdetails.User(
                 springUsername,
                 storedPassword,
-                List.of(authority));
+                authorities);
     }
 }

@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import type { Student, AdminUser, AuthState } from '../types/user';
+import type { Student, AuthState } from '../types/user';
 import { authService } from '../services/authService';
 
 interface AuthContextValue {
   authState: AuthState;
+  login: (studentId: string, lmsPassword: string) => Promise<void>;
   studentLogin: (studentId: string, lmsPassword: string) => Promise<void>;
-  adminLogin: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
 }
@@ -24,27 +24,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (stored.isAuthenticated) setAuthState(stored);
   }, []);
 
-  const studentLogin = async (studentId: string, lmsPassword: string) => {
+  const login = async (studentId: string, lmsPassword: string) => {
     setLoading(true);
     try {
-      // authService calls POST /api/auth/student/login, stores JWT, returns student profile
-      const student = await authService.studentLogin(studentId, lmsPassword);
-      setAuthState({ isAuthenticated: true, user: student, role: 'student' });
+      const user = await authService.login(studentId, lmsPassword);
+      const role = (user.role?.toLowerCase() === 'admin' || user.studentId === '2500032102') ? 'admin' : 'student';
+      setAuthState({ isAuthenticated: true, user, role });
     } finally {
       setLoading(false);
     }
   };
 
-  const adminLogin = async (username: string, password: string) => {
-    setLoading(true);
-    try {
-      const admin = await authService.adminLogin(username, password);
-      authService.persistAdminSession(admin as AdminUser);
-      setAuthState({ isAuthenticated: true, user: admin as AdminUser, role: 'admin' });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const studentLogin = login;
 
   const logout = async () => {
     setLoading(true);
@@ -57,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ authState, studentLogin, adminLogin, logout, loading }}>
+    <AuthContext.Provider value={{ authState, login, studentLogin, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

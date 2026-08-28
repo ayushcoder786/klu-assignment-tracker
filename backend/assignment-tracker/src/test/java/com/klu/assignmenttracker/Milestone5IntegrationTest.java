@@ -32,7 +32,12 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
+@SpringBootTest(properties = {
+        "app.sync.initial-delay-ms=3600000",
+        "app.push.vapid-public-key=BHcQuwpZvXy61nwpsqsi_QjaTnVJZ_7WpsIEhYiACsu4PgZ5n2uE0bS3QsuoZeG5OmWo3KMtuVUmSnwTXdigxaI",
+        "app.push.vapid-private-key=bVVqoIRkNZ0TjwmBkcSJhRyAOEKNr_WxnlHCkbXSZDc",
+        "app.push.subject=mailto:test@example.com"
+})
 public class Milestone5IntegrationTest {
 
     private MockMvc mockMvc;

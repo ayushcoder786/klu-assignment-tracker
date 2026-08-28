@@ -65,7 +65,10 @@ public class NotificationSchedulerService {
      * <p>Note: @Scheduled with a SpEL expression requires {@code @EnableScheduling}
      * on the application class.
      */
-    @Scheduled(fixedDelayString = "#{${app.sync.interval-minutes:30} * 60000}")
+    @Scheduled(
+            initialDelayString = "${app.sync.initial-delay-ms:60000}",
+            fixedDelayString = "#{${app.sync.interval-minutes:30} * 60000}"
+    )
     public void runScheduledSync() {
         if (!syncEnabled) {
             log.debug("Scheduled sync is disabled (app.sync.enabled=false). Skipping.");

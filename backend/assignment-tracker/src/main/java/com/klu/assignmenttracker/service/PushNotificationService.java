@@ -54,31 +54,48 @@ public class PushNotificationService {
 
     @PostConstruct
     public void init() {
-        // Register Bouncy Castle as a JCE provider (required for EC key operations)
-        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
-            Security.addProvider(new BouncyCastleProvider());
+        try {
+            // Register Bouncy Castle as a JCE provider (required for EC key operations)
+            if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+                Security.addProvider(new BouncyCastleProvider());
+            }
+        } catch (Throwable t) {
+            log.warn("Unable to register BouncyCastleProvider: {}", t.getMessage());
         }
 
         if (!pushEnabled) {
-            log.info("Web Push is disabled (app.push.enabled=false). No push notifications will be sent.");
+            log.info("Push notification configuration: DISABLED (app.push.enabled=false)");
             return;
         }
 
-        if (vapidPublicKey == null || vapidPublicKey.isBlank()
-                || vapidPrivateKey == null || vapidPrivateKey.isBlank()) {
-            log.warn("VAPID keys not configured. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY environment variables. " +
-                    "Push notifications will be disabled until keys are provided.");
+        String cleanPublicKey = sanitizeKey(vapidPublicKey);
+        String cleanPrivateKey = sanitizeKey(vapidPrivateKey);
+        String cleanSubject = (vapidSubject != null && !vapidSubject.isBlank())
+                ? vapidSubject.trim().replaceAll("^[\"']|[\"']$", "")
+                : "mailto:klu.assignment.tracker@example.com";
+
+        if (cleanPublicKey.isBlank() || cleanPrivateKey.isBlank()) {
+            log.info("Push notification configuration: DISABLED - VAPID variables missing");
             return;
         }
 
         try {
             // PushService(publicKey, privateKey, subject) — both keys are Base64url-encoded EC key strings
-            pushService = new PushService(vapidPublicKey, vapidPrivateKey, vapidSubject);
-            configured = true;
-            log.info("Web Push / VAPID service initialised successfully.");
-        } catch (Exception e) {
-            log.error("Failed to initialise Web Push service: {}. Push notifications will be disabled.", e.getMessage());
+            pushService = new PushService(cleanPublicKey, cleanPrivateKey, cleanSubject);
+            this.configured = true;
+            this.vapidPublicKey = cleanPublicKey;
+            this.vapidPrivateKey = cleanPrivateKey;
+            this.vapidSubject = cleanSubject;
+            log.info("Push notification configuration: ENABLED");
+        } catch (Throwable t) {
+            this.configured = false;
+            log.warn("Push notification configuration: DISABLED - invalid VAPID variables ({})", t.getMessage());
         }
+    }
+
+    private String sanitizeKey(String key) {
+        if (key == null) return "";
+        return key.trim().replaceAll("^[\"']|[\"']$", "");
     }
 
     /**
@@ -86,7 +103,7 @@ public class PushNotificationService {
      * The private key is NEVER returned through this or any other method.
      */
     public String getVapidPublicKey() {
-        return vapidPublicKey != null ? vapidPublicKey : "";
+        return vapidPublicKey != null ? sanitizeKey(vapidPublicKey) : "";
     }
 
     /**

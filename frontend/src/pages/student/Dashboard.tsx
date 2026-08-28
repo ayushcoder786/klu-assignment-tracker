@@ -146,27 +146,27 @@ export default function StudentDashboard() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* ─── Hero Header & LMS Sync Action ──────────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-6 rounded-3xl bg-gradient-to-r from-violet-950/40 via-indigo-950/30 to-slate-950 border border-white/10 shadow-2xl backdrop-blur-xl">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-6 rounded-3xl bg-gradient-to-r from-violet-950/60 via-slate-900 to-slate-900 border border-slate-800 shadow-xl">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-violet-500/20 text-violet-300 border border-violet-500/30">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-violet-950/80 text-violet-300 border border-violet-500/40">
               KLU Student Portal
             </span>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs font-semibold text-slate-300">
               {format(new Date(), 'EEEE, MMMM d, yyyy')}
             </span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             {greeting}, {studentDisplayName}! 👋
           </h2>
           {student?.studentId && (
-            <p className="text-xs text-indigo-300 font-mono mt-0.5">
+            <p className="text-xs text-indigo-300 font-mono font-bold mt-0.5">
               {student.studentId}
             </p>
           )}
-          <p className="text-slate-400 text-sm mt-1">
-            You have <span className="text-amber-300 font-semibold">{summary.pending} pending</span> and{' '}
-            <span className="text-red-400 font-semibold">{summary.overdue} overdue</span> assignments.
+          <p className="text-slate-300 text-sm font-medium mt-1">
+            You have <span className="text-amber-300 font-bold">{summary.pending} pending</span> and{' '}
+            <span className="text-red-400 font-bold">{summary.overdue} overdue</span> assignments.
           </p>
         </div>
 
@@ -174,7 +174,7 @@ export default function StudentDashboard() {
           <button
             onClick={triggerSync}
             disabled={syncing}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-lg shadow-indigo-500/25 disabled:opacity-50 transition-all cursor-pointer active:scale-95"
+            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-950/50 disabled:opacity-50 transition-all cursor-pointer active:scale-95"
           >
             <FiRefreshCw size={16} className={syncing ? 'animate-spin' : ''} />
             <span>{syncing ? 'Syncing Moodle...' : 'Sync with LMS'}</span>
@@ -188,8 +188,8 @@ export default function StudentDashboard() {
           title="All Assignments"
           value={summary.total}
           icon={<FiBookOpen size={18} />}
-          color="text-violet-400"
-          bgColor="bg-violet-500/10"
+          color="text-violet-300"
+          bgColor="bg-violet-950/80"
           onClick={() => setActiveSection('all')}
           active={activeSection === 'all'}
         />
@@ -197,8 +197,8 @@ export default function StudentDashboard() {
           title="Due Today"
           value={summary.dueToday}
           icon={<FiClock size={18} />}
-          color="text-orange-400"
-          bgColor="bg-orange-500/10"
+          color="text-orange-300"
+          bgColor="bg-orange-950/80"
           onClick={() => setActiveSection('dueToday')}
           active={activeSection === 'dueToday'}
         />
@@ -206,8 +206,8 @@ export default function StudentDashboard() {
           title="Due This Week"
           value={summary.dueThisWeek}
           icon={<FiCalendar size={18} />}
-          color="text-amber-400"
-          bgColor="bg-amber-500/10"
+          color="text-amber-300"
+          bgColor="bg-amber-950/80"
           onClick={() => setActiveSection('dueThisWeek')}
           active={activeSection === 'dueThisWeek'}
         />
@@ -215,8 +215,8 @@ export default function StudentDashboard() {
           title="Upcoming"
           value={summary.upcoming}
           icon={<FiCalendar size={18} />}
-          color="text-sky-400"
-          bgColor="bg-sky-500/10"
+          color="text-sky-300"
+          bgColor="bg-sky-950/80"
           onClick={() => setActiveSection('upcoming')}
           active={activeSection === 'upcoming'}
         />
@@ -224,8 +224,8 @@ export default function StudentDashboard() {
           title="Overdue"
           value={summary.overdue}
           icon={<FiAlertTriangle size={18} />}
-          color="text-red-400"
-          bgColor="bg-red-500/10"
+          color="text-red-300"
+          bgColor="bg-red-950/80"
           onClick={() => setActiveSection('overdue')}
           active={activeSection === 'overdue'}
         />
@@ -233,8 +233,8 @@ export default function StudentDashboard() {
           title="Submitted"
           value={summary.submitted + summary.graded}
           icon={<FiCheckCircle size={18} />}
-          color="text-emerald-400"
-          bgColor="bg-emerald-500/10"
+          color="text-emerald-300"
+          bgColor="bg-emerald-950/80"
           onClick={() => setActiveSection('submitted')}
           active={activeSection === 'submitted'}
         />
@@ -242,13 +242,13 @@ export default function StudentDashboard() {
 
       {/* ─── Urgent Spotlight (if any) ───────────────────────────────── */}
       {urgentAssignments.length > 0 && activeSection === 'all' && (
-        <div className="rounded-3xl border border-amber-500/20 bg-gradient-to-r from-amber-500/5 via-orange-500/5 to-transparent p-5 backdrop-blur-xl">
+        <div className="rounded-3xl border border-amber-500/30 bg-slate-900 p-5 shadow-xl">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-bold text-amber-300 flex items-center gap-2">
               <FiClock size={16} className="text-amber-400 animate-pulse" />
               Urgent Attention Required (Next 3 Days)
             </h3>
-            <span className="text-xs text-amber-400 font-medium">
+            <span className="text-xs text-amber-300 font-bold">
               {urgentAssignments.length} deadlines approaching
             </span>
           </div>
@@ -258,22 +258,22 @@ export default function StudentDashboard() {
               <Link
                 key={a.id}
                 to={`/assignments/${a.id}`}
-                className="flex flex-col justify-between p-4 rounded-2xl bg-slate-900/60 border border-amber-500/20 hover:border-amber-400/40 hover:bg-slate-900/80 transition-all group"
+                className="flex flex-col justify-between p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-amber-500/40 hover:bg-slate-900 transition-all group shadow-md"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md bg-white/5 text-slate-300">
+                    <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-md bg-indigo-950/80 border border-indigo-500/30 text-indigo-300">
                       {a.courseName}
                     </span>
                     <CountdownChip dueDate={a.dueDate} status={a.status} />
                   </div>
-                  <h4 className="text-sm font-semibold text-white group-hover:text-amber-300 transition-colors line-clamp-2">
+                  <h4 className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors line-clamp-2 mt-1">
                     {a.title}
                   </h4>
                 </div>
-                <div className="mt-3 pt-2 border-t border-white/5 flex items-center justify-between text-xs text-slate-400">
+                <div className="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300 font-medium">
                   <span>{a.dueDate ? format(new Date(a.dueDate), 'MMM d, h:mm a') : 'No due date'}</span>
-                  <FiChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                  <FiChevronRight size={14} className="text-slate-400 group-hover:text-amber-300 group-hover:translate-x-0.5 transition-all" />
                 </div>
               </Link>
             ))}
@@ -291,7 +291,7 @@ export default function StudentDashboard() {
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             placeholder="Search assignments or courses..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-white/10 bg-slate-900/50 text-sm text-white placeholder:text-slate-500 outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all"
+            className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-slate-800 bg-slate-900 text-sm font-medium text-white placeholder:text-slate-400 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 shadow-md transition-all"
           />
         </div>
 
@@ -300,7 +300,7 @@ export default function StudentDashboard() {
           <select
             value={selectedCourse}
             onChange={e => setSelectedCourse(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-2xl border border-white/10 bg-slate-900/50 text-sm text-white outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 appearance-none cursor-pointer pr-10"
+            className="w-full px-4 py-2.5 rounded-2xl border border-slate-800 bg-slate-900 text-sm font-medium text-white outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 appearance-none cursor-pointer pr-10 shadow-md"
           >
             <option value="all" className="bg-slate-900 text-white">All Courses ({courses.length})</option>
             {courses.map(c => (
@@ -317,7 +317,7 @@ export default function StudentDashboard() {
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value as SortOption)}
-            className="w-full px-4 py-2.5 rounded-2xl border border-white/10 bg-slate-900/50 text-sm text-white outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 appearance-none cursor-pointer pr-10"
+            className="w-full px-4 py-2.5 rounded-2xl border border-slate-800 bg-slate-900 text-sm font-medium text-white outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 appearance-none cursor-pointer pr-10 shadow-md"
           >
             <option value="nearest" className="bg-slate-900 text-white">Nearest Due Date</option>
             <option value="furthest" className="bg-slate-900 text-white">Furthest Due Date</option>
@@ -328,21 +328,21 @@ export default function StudentDashboard() {
       </div>
 
       {/* ─── Main Assignment Feed / Table ───────────────────────────── */}
-      <div className="rounded-3xl border border-white/10 bg-white/4 backdrop-blur-xl overflow-hidden shadow-2xl">
+      <div className="rounded-3xl border border-slate-800 bg-slate-900 overflow-hidden shadow-2xl">
         {/* Section Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-950/40">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950">
           <div className="flex items-center gap-2">
-            <h3 className="text-base font-bold text-white capitalize">
+            <h3 className="text-base font-extrabold text-white capitalize">
               {activeSection === 'all' ? 'All Assignments' : activeSection.replace(/([A-Z])/g, ' $1')}
             </h3>
-            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-white/10 text-slate-300">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 border border-slate-700 text-slate-200">
               {filteredAssignments.length}
             </span>
           </div>
 
           <Link
             to="/assignments"
-            className="text-xs text-violet-400 hover:text-violet-300 flex items-center gap-1 font-medium transition-colors"
+            className="text-xs text-violet-400 hover:text-violet-300 flex items-center gap-1 font-bold transition-colors"
           >
             Full Assignment View <FiArrowRight size={13} />
           </Link>
@@ -358,21 +358,21 @@ export default function StudentDashboard() {
         ) : error ? (
           <div className="p-12 text-center space-y-3">
             <FiAlertTriangle size={36} className="text-red-400 mx-auto" />
-            <p className="text-red-300 font-semibold text-sm">{error}</p>
+            <p className="text-red-300 font-bold text-sm">{error}</p>
             <button
               onClick={fetchData}
-              className="px-4 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer"
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white transition-all cursor-pointer border border-slate-700"
             >
               Retry
             </button>
           </div>
         ) : filteredAssignments.length === 0 ? (
           <div className="p-16 text-center space-y-3">
-            <div className="w-14 h-14 rounded-3xl bg-violet-500/10 border border-violet-500/20 text-violet-400 flex items-center justify-center mx-auto">
+            <div className="w-14 h-14 rounded-3xl bg-violet-950/80 border border-violet-500/30 text-violet-300 flex items-center justify-center mx-auto shadow-md">
               <FiBookOpen size={24} />
             </div>
-            <h4 className="text-base font-bold text-white">No assignments found</h4>
-            <p className="text-slate-400 text-xs max-w-md mx-auto">
+            <h4 className="text-base font-extrabold text-white">No assignments found</h4>
+            <p className="text-slate-300 text-xs max-w-md mx-auto">
               {searchTerm || selectedCourse !== 'all' || activeSection !== 'all'
                 ? 'No assignments match your active filters. Try clearing or adjusting search parameters.'
                 : 'No assignments are currently recorded. Click "Sync with LMS" above to fetch your active course assignments from KLU Moodle.'}
@@ -384,14 +384,14 @@ export default function StudentDashboard() {
                   setSelectedCourse('all');
                   setActiveSection('all');
                 }}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white transition-all cursor-pointer border border-slate-700"
               >
                 Clear all filters
               </button>
             )}
           </div>
         ) : (
-          <div className="divide-y divide-white/5">
+          <div className="divide-y divide-slate-800">
             {filteredAssignments.map(a => {
               const due = a.dueDate ? (typeof a.dueDate === 'string' ? parseISO(a.dueDate) : new Date(a.dueDate)) : null;
 
@@ -399,24 +399,24 @@ export default function StudentDashboard() {
                 <Link
                   key={a.id}
                   to={`/assignments/${a.id}`}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 hover:bg-white/5 transition-all duration-200 group"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 hover:bg-slate-850 hover:bg-slate-800/60 transition-all duration-200 group"
                 >
                   <div className="flex-1 min-w-0 pr-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[11px] font-mono text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-lg truncate max-w-[200px]">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-xs font-mono font-bold text-indigo-300 bg-indigo-950/70 border border-indigo-500/30 px-2 py-0.5 rounded-lg truncate max-w-[200px]">
                         {a.courseName}
                       </span>
                       {a.moodleAssignmentId && (
-                        <span className="text-[10px] text-slate-500 font-mono hidden md:inline">
+                        <span className="text-xs text-slate-400 font-mono hidden md:inline">
                           ID: {a.moodleAssignmentId}
                         </span>
                       )}
                     </div>
-                    <h4 className="text-base font-semibold text-white group-hover:text-violet-300 transition-colors line-clamp-1">
+                    <h4 className="text-base font-bold text-white group-hover:text-violet-300 transition-colors line-clamp-1">
                       {a.title}
                     </h4>
                     {a.description && (
-                      <p className="text-xs text-slate-400 mt-1 line-clamp-1">
+                      <p className="text-xs font-normal text-slate-300 mt-1 line-clamp-1">
                         {a.description}
                       </p>
                     )}
@@ -424,17 +424,17 @@ export default function StudentDashboard() {
 
                   <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
                     <div className="text-right hidden sm:block">
-                      <p className="text-xs font-medium text-slate-200">
+                      <p className="text-xs font-bold text-slate-200">
                         {due ? format(due, 'MMM d, yyyy') : 'No deadline'}
                       </p>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-xs text-slate-400 font-medium">
                         {due ? format(due, 'h:mm a') : '—'}
                       </p>
                     </div>
 
                     <CountdownChip dueDate={a.dueDate} status={a.status} />
                     <Badge status={a.status} />
-                    <FiChevronRight size={16} className="text-slate-500 group-hover:text-white group-hover:translate-x-1 transition-all" />
+                    <FiChevronRight size={16} className="text-slate-400 group-hover:text-white group-hover:translate-x-1 transition-all" />
                   </div>
                 </Link>
               );

@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -95,7 +95,7 @@ public class NotificationSchedulerService {
                     continue;
                 }
 
-                LocalDateTime syncedAt = LocalDateTime.now();
+                Instant syncedAt = Instant.now();
                 syncService.syncUserAssignments(student, tokenOpt.get());
 
                 // After sync, dispatch any pending push notifications

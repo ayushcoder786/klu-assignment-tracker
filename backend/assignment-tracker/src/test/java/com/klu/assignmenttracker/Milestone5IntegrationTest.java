@@ -21,8 +21,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
@@ -196,7 +196,7 @@ public class Milestone5IntegrationTest {
     @DisplayName("3. Notification Dispatch: Test all 5 types and MongoDB deduplication")
     void testAllNotificationTypesAndDeduplication() {
         // Create 5 assignments corresponding to the 5 notification types
-        LocalDateTime now = LocalDateTime.now();
+        Instant now = Instant.now();
 
         // Type 1: NEW ASSIGNMENT (first seen 2 min ago, within syncWindow)
         Assignment newAssign = Assignment.builder()
@@ -204,7 +204,7 @@ public class Milestone5IntegrationTest {
                 .title("New Java Assignment")
                 .courseName("Java Programming")
                 .status(AssignmentStatus.PENDING)
-                .firstSeen(now.minusMinutes(2))
+                .firstSeen(now.minus(2, ChronoUnit.MINUTES))
                 .build();
         newAssign = assignmentRepository.save(newAssign);
 
@@ -214,8 +214,8 @@ public class Milestone5IntegrationTest {
                 .title("OS Project Due Tomorrow")
                 .courseName("Operating Systems")
                 .status(AssignmentStatus.PENDING)
-                .dueDate(now.plusHours(24))
-                .firstSeen(now.minusDays(5))
+                .dueDate(now.plus(24, ChronoUnit.HOURS))
+                .firstSeen(now.minus(5, ChronoUnit.DAYS))
                 .build();
         dueTomorrowAssign = assignmentRepository.save(dueTomorrowAssign);
 
@@ -225,8 +225,8 @@ public class Milestone5IntegrationTest {
                 .title("DBMS Lab Due Today")
                 .courseName("Database Systems")
                 .status(AssignmentStatus.PENDING)
-                .dueDate(now.plusHours(8))
-                .firstSeen(now.minusDays(5))
+                .dueDate(now.plus(8, ChronoUnit.HOURS))
+                .firstSeen(now.minus(5, ChronoUnit.DAYS))
                 .build();
         dueTodayAssign = assignmentRepository.save(dueTodayAssign);
 
@@ -236,20 +236,20 @@ public class Milestone5IntegrationTest {
                 .title("Compiler Design Overdue")
                 .courseName("Compiler Design")
                 .status(AssignmentStatus.OVERDUE)
-                .dueDate(now.minusHours(4))
-                .firstSeen(now.minusDays(5))
+                .dueDate(now.minus(4, ChronoUnit.HOURS))
+                .firstSeen(now.minus(5, ChronoUnit.DAYS))
                 .build();
         overdueAssign = assignmentRepository.save(overdueAssign);
 
         // Type 5: DEADLINE CHANGED setup
         // Simulate a previously sent DUE_TOMORROW record with old date
-        String oldDueDateStr = now.plusDays(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        String oldDueDateStr = now.plus(1, ChronoUnit.DAYS).toString();
         SentNotification prevSent = SentNotification.builder()
                 .userId(testStudent.getId())
                 .assignmentId("assign-changed-1")
                 .notificationType(NotificationType.DUE_TOMORROW)
                 .dueDateVersion(oldDueDateStr)
-                .sentAt(now.minusDays(1))
+                .sentAt(now.minus(1, ChronoUnit.DAYS))
                 .build();
         sentNotificationRepository.save(prevSent);
 
@@ -259,8 +259,8 @@ public class Milestone5IntegrationTest {
                 .title("Networks Lab")
                 .courseName("Computer Networks")
                 .status(AssignmentStatus.PENDING)
-                .dueDate(now.plusDays(3)) // New extended deadline
-                .firstSeen(now.minusDays(5))
+                .dueDate(now.plus(3, ChronoUnit.DAYS)) // New extended deadline
+                .firstSeen(now.minus(5, ChronoUnit.DAYS))
                 .build();
         assignmentRepository.save(changedAssign);
 

@@ -10,7 +10,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * Stores a student's Web Push subscription endpoint and keys.
@@ -53,7 +53,7 @@ public class PushSubscription {
     private boolean enabled = true;
 
     @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private Instant createdAt = Instant.now();
 
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 }

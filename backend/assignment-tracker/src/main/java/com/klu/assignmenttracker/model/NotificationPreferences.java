@@ -8,7 +8,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * Per-student notification preference settings.
@@ -49,7 +49,7 @@ public class NotificationPreferences {
     private boolean deadlineChanged = true;
 
     @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private Instant createdAt = Instant.now();
 
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 }

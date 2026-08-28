@@ -15,6 +15,7 @@ import type { Student } from '../../types/user';
 import type { Assignment } from '../../types/assignment';
 import { CountdownChip } from '../../components/common/CountdownChip';
 import { getCleanStudentName } from '../../utils/userUtils';
+import { formatLocalDateTime } from '../../utils/dateUtils';
 
 export default function StudentDetail() {
   const { studentId } = useParams<{ studentId: string }>();
@@ -107,8 +108,8 @@ export default function StudentDetail() {
         {[
           { icon: <FiHash size={15} />, label: 'Student ID', value: student.studentId },
           { icon: <FiBook size={15} />, label: 'Branch', value: `${student.branch ?? 'N/A'} · Yr ${student.year ?? 'N/A'}` },
-          { icon: <FiCalendar size={15} />, label: 'Last Login', value: student.lastLogin ? format(new Date(student.lastLogin), 'MMM d, h:mm a') : 'Never' },
-          { icon: <FiRefreshCw size={15} />, label: 'Last Sync', value: student.lastSync ? format(new Date(student.lastSync), 'MMM d, h:mm a') : 'Never' },
+          { icon: <FiCalendar size={15} />, label: 'Last Login', value: formatLocalDateTime(student.lastLogin, 'MMM d, h:mm a') },
+          { icon: <FiRefreshCw size={15} />, label: 'Last Sync', value: formatLocalDateTime(student.lastSync, 'MMM d, h:mm a') },
         ].map(({ icon, label, value }) => (
           <Card key={label} className="!p-4">
             <div className="text-slate-400 mb-2">{icon}</div>

@@ -10,7 +10,7 @@ export function CountdownChip({ dueDate, status }: CountdownChipProps) {
 
   if (normalized === 'submitted' || normalized === 'graded') {
     return (
-      <span className="inline-flex items-center text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
+      <span className="inline-flex items-center text-xs font-semibold text-emerald-300 bg-emerald-950/70 border border-emerald-500/40 px-2.5 py-0.5 rounded-full">
         Completed
       </span>
     );
@@ -18,7 +18,7 @@ export function CountdownChip({ dueDate, status }: CountdownChipProps) {
 
   if (!dueDate) {
     return (
-      <span className="inline-flex items-center text-xs font-medium text-slate-400 bg-slate-500/10 border border-slate-500/20 px-2.5 py-0.5 rounded-full">
+      <span className="inline-flex items-center text-xs font-semibold text-slate-300 bg-slate-800 border border-slate-700 px-2.5 py-0.5 rounded-full">
         No deadline
       </span>
     );
@@ -31,7 +31,7 @@ export function CountdownChip({ dueDate, status }: CountdownChipProps) {
     const days = Math.abs(differenceInDays(now, due));
     const label = days === 0 ? 'Due today' : `${days}d overdue`;
     return (
-      <span className="inline-flex items-center text-xs font-medium text-red-400 bg-red-500/10 border border-red-500/20 px-2.5 py-0.5 rounded-full">
+      <span className="inline-flex items-center text-xs font-semibold text-red-300 bg-red-950/70 border border-red-500/40 px-2.5 py-0.5 rounded-full">
         {label}
       </span>
     );
@@ -47,20 +47,20 @@ export function CountdownChip({ dueDate, status }: CountdownChipProps) {
 
   if (totalSeconds < 3600) {
     label = `${mins}m left`;
-    colorClass = 'text-red-400 bg-red-500/10 border-red-500/20 animate-pulse';
+    colorClass = 'text-red-300 bg-red-950/80 border-red-500/50 font-bold animate-pulse';
   } else if (totalSeconds < 86400) {
     label = `${hours}h ${mins}m left`;
-    colorClass = 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+    colorClass = 'text-amber-300 bg-amber-950/70 border-amber-500/40 font-semibold';
   } else if (days <= 3) {
     label = `${days}d ${hours}h left`;
-    colorClass = 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+    colorClass = 'text-amber-300 bg-amber-950/70 border-amber-500/40 font-semibold';
   } else {
     label = `${days}d left`;
-    colorClass = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+    colorClass = 'text-emerald-300 bg-emerald-950/70 border-emerald-500/40 font-semibold';
   }
 
   return (
-    <span className={`inline-flex items-center text-xs font-medium ${colorClass} border px-2.5 py-0.5 rounded-full`}>
+    <span className={`inline-flex items-center text-xs ${colorClass} border px-2.5 py-0.5 rounded-full`}>
       {label}
     </span>
   );

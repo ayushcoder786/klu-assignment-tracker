@@ -164,7 +164,7 @@ export default function AssignmentList() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search assignments or courses…"
-            className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-white/10 bg-slate-900/50 text-sm text-white placeholder:text-slate-500 outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all"
+            className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-slate-800 bg-slate-900 text-sm font-medium text-white placeholder:text-slate-400 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 shadow-md transition-all"
           />
         </div>
 
@@ -173,7 +173,7 @@ export default function AssignmentList() {
           <select
             value={selectedCourse}
             onChange={e => setSelectedCourse(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-2xl border border-white/10 bg-slate-900/50 text-sm text-white outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 appearance-none cursor-pointer pr-10"
+            className="w-full px-4 py-2.5 rounded-2xl border border-slate-800 bg-slate-900 text-sm font-medium text-white outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 appearance-none cursor-pointer pr-10 shadow-md"
           >
             <option value="all" className="bg-slate-900 text-white">All Courses</option>
             {courses.map(c => (
@@ -190,7 +190,7 @@ export default function AssignmentList() {
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value as SortOption)}
-            className="w-full px-4 py-2.5 rounded-2xl border border-white/10 bg-slate-900/50 text-sm text-white outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 appearance-none cursor-pointer pr-10"
+            className="w-full px-4 py-2.5 rounded-2xl border border-slate-800 bg-slate-900 text-sm font-medium text-white outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 appearance-none cursor-pointer pr-10 shadow-md"
           >
             <option value="nearest" className="bg-slate-900 text-white">Nearest Due Date</option>
             <option value="furthest" className="bg-slate-900 text-white">Furthest Due Date</option>
@@ -207,15 +207,15 @@ export default function AssignmentList() {
             key={t.key}
             onClick={() => setActiveTab(t.key)}
             className={`
-              flex-none flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-semibold transition-all duration-200 cursor-pointer
+              flex-none flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer
               ${activeTab === t.key
-                ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/25 scale-[1.02]'
-                : 'text-slate-400 hover:text-white hover:bg-white/5 border border-white/10'
+                ? 'bg-violet-600 text-white shadow-lg shadow-violet-950/50 scale-[1.02]'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800 bg-slate-900 border border-slate-800'
               }
             `}
           >
             <span>{t.label}</span>
-            <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${activeTab === t.key ? 'bg-white/20 text-white' : 'bg-white/5 text-slate-400'}`}>
+            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${activeTab === t.key ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'}`}>
               {counts[t.key]}
             </span>
           </button>
@@ -223,34 +223,42 @@ export default function AssignmentList() {
       </div>
 
       {/* Table / List */}
-      <div className="rounded-3xl border border-white/10 bg-white/4 backdrop-blur-xl overflow-hidden shadow-2xl">
+      <div className="rounded-3xl border border-slate-800 bg-slate-900 overflow-hidden shadow-2xl">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/10 bg-slate-950/40">
-                <th className="text-left px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Course</th>
-                <th className="text-left px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Assignment</th>
-                <th className="text-left px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:table-cell">Due Date</th>
-                <th className="text-left px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
-                <th className="text-left px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider hidden sm:table-cell">Countdown</th>
+              <tr className="border-b border-slate-800 bg-slate-950">
+                <th className="text-left px-6 py-4 text-xs font-bold text-slate-300 uppercase tracking-wider">Course</th>
+                <th className="text-left px-6 py-4 text-xs font-bold text-slate-300 uppercase tracking-wider">Assignment</th>
+                <th className="text-left px-6 py-4 text-xs font-bold text-slate-300 uppercase tracking-wider hidden md:table-cell">Due Date</th>
+                <th className="text-left px-6 py-4 text-xs font-bold text-slate-300 uppercase tracking-wider">Status</th>
+                <th className="text-left px-6 py-4 text-xs font-bold text-slate-300 uppercase tracking-wider hidden sm:table-cell">Countdown</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-slate-800">
               {loading ? (
-                Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} cols={5} />)
+                <tr>
+                  <td colSpan={5} className="p-6">
+                    <div className="space-y-3">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <SkeletonRow key={i} cols={5} />
+                      ))}
+                    </div>
+                  </td>
+                </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-red-300">
+                  <td colSpan={5} className="px-6 py-12 text-center text-red-300 font-bold">
                     <FiAlertTriangle size={32} className="mx-auto mb-2 text-red-400" />
                     {error}
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-16 text-center text-slate-400">
-                    <FiBookOpen size={36} className="mx-auto mb-2 text-violet-400/60" />
-                    <p className="font-semibold text-white">No assignments match your criteria</p>
-                    <p className="text-xs text-slate-500 mt-1">Try changing tabs, clearing search, or syncing with LMS.</p>
+                  <td colSpan={5} className="px-6 py-16 text-center text-slate-300">
+                    <FiBookOpen size={36} className="mx-auto mb-2 text-violet-400" />
+                    <p className="font-bold text-white text-base">No assignments match your criteria</p>
+                    <p className="text-xs text-slate-400 mt-1">Try changing tabs, clearing search, or syncing with LMS.</p>
                   </td>
                 </tr>
               ) : (
@@ -258,28 +266,28 @@ export default function AssignmentList() {
                   const due = a.dueDate ? (typeof a.dueDate === 'string' ? parseISO(a.dueDate) : new Date(a.dueDate)) : null;
 
                   return (
-                    <tr key={a.id} className="hover:bg-white/5 transition-colors group">
+                    <tr key={a.id} className="hover:bg-slate-850 hover:bg-slate-800/60 transition-colors group">
                       <td className="px-6 py-4">
-                        <span className="text-xs font-mono text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-lg">
+                        <span className="text-xs font-mono font-bold text-indigo-300 bg-indigo-950/70 border border-indigo-500/30 px-2.5 py-1 rounded-lg">
                           {a.courseName}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         <Link
                           to={`/assignments/${a.id}`}
-                          className="text-sm font-semibold text-white group-hover:text-violet-300 transition-colors line-clamp-1"
+                          className="text-sm font-bold text-white group-hover:text-violet-300 transition-colors line-clamp-1"
                         >
                           {a.title}
                         </Link>
                         {a.description && (
-                          <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{a.description}</p>
+                          <p className="text-xs text-slate-300 mt-0.5 line-clamp-1">{a.description}</p>
                         )}
                       </td>
                       <td className="px-6 py-4 hidden md:table-cell">
-                        <p className="text-xs font-medium text-slate-200">
+                        <p className="text-xs font-bold text-slate-200">
                           {due ? format(due, 'MMM d, yyyy') : 'No due date'}
                         </p>
-                        <p className="text-[11px] text-slate-500">
+                        <p className="text-xs text-slate-400 font-medium">
                           {due ? format(due, 'h:mm a') : '—'}
                         </p>
                       </td>

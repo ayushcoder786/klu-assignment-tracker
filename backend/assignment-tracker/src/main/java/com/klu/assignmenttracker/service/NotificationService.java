@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * Business logic for managing push subscriptions and notification preferences.
@@ -52,7 +52,7 @@ public class NotificationService {
         sub.setP256dh(request.getP256dh());
         sub.setAuth(request.getAuth());
         sub.setEnabled(true);
-        sub.setUpdatedAt(LocalDateTime.now());
+        sub.setUpdatedAt(Instant.now());
 
         subscriptionRepository.save(sub);
         log.info("Push subscription saved for userId={}", userId);
@@ -104,7 +104,7 @@ public class NotificationService {
         prefs.setDueToday(dto.isDueToday());
         prefs.setOverdue(dto.isOverdue());
         prefs.setDeadlineChanged(dto.isDeadlineChanged());
-        prefs.setUpdatedAt(LocalDateTime.now());
+        prefs.setUpdatedAt(Instant.now());
 
         NotificationPreferences saved = preferencesRepository.save(prefs);
         log.info("Notification preferences updated for userId={}", userId);

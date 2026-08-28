@@ -7,7 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * API response representing an Assignment.
@@ -25,11 +25,11 @@ public class AssignmentResponse {
     private String courseName;
     private String title;
     private String description;
-    private LocalDateTime dueDate;
-    private LocalDateTime cutoffDate;
+    private Instant dueDate;
+    private Instant cutoffDate;
     private AssignmentStatus status;
-    private LocalDateTime firstSeen;
-    private LocalDateTime lastChecked;
+    private Instant firstSeen;
+    private Instant lastChecked;
 
     /** Convert an Assignment model to an AssignmentResponse DTO */
     public static AssignmentResponse fromAssignment(Assignment assignment) {

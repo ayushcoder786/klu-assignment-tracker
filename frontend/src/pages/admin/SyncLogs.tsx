@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { format } from 'date-fns';
 import { FiSearch, FiFileText, FiAlertCircle } from 'react-icons/fi';
 import { Badge } from '../../components/common/Badge';
 import { LoadingSpinner, SkeletonRow } from '../../components/common/LoadingSpinner';
 import { adminService } from '../../services/adminService';
+import { formatLocalDateTime, formatLocalTime } from '../../utils/dateUtils';
 import type { SyncLog, SyncStatusType } from '../../types/sync';
 
 type FilterStatus = 'all' | SyncStatusType;
@@ -109,11 +109,11 @@ export default function SyncLogs() {
                       <code className="text-[10px] text-cyan-400">{log.studentId}</code>
                     </td>
                     <td className="px-6 py-4 hidden sm:table-cell text-xs text-slate-400">
-                      {format(new Date(log.triggeredAt), 'MMM d, yyyy h:mm:ss a')}
+                      {formatLocalDateTime(log.triggeredAt, 'MMM d, yyyy h:mm:ss a')}
                     </td>
                     <td className="px-6 py-4 hidden md:table-cell text-xs text-slate-400">
                       {log.completedAt
-                        ? format(new Date(log.completedAt), 'h:mm:ss a')
+                        ? formatLocalTime(log.completedAt)
                         : <span className="text-slate-600 italic">In progress</span>
                       }
                     </td>

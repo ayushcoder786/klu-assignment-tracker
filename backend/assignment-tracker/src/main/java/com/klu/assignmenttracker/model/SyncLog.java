@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * Records each sync attempt with Moodle.
@@ -28,12 +28,12 @@ public class SyncLog {
     /** Which user triggered or this sync was run for */
     private String userId;
 
-    /** When the sync started */
+    /** When the sync started (UTC) */
     @Builder.Default
-    private LocalDateTime startedAt = LocalDateTime.now();
+    private Instant startedAt = Instant.now();
 
-    /** When the sync finished (null if still running) */
-    private LocalDateTime completedAt;
+    /** When the sync finished (null if still running) (UTC) */
+    private Instant completedAt;
 
     /** RUNNING, SUCCESS, FAILED, or SKIPPED */
     @Builder.Default

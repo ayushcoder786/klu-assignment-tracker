@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { format } from 'date-fns';
 import { FiUsers, FiUserCheck, FiAlertTriangle, FiBookOpen, FiRefreshCw, FiArrowRight, FiClock } from 'react-icons/fi';
 import { StatCard } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { adminService } from '../../services/adminService';
+import { formatLocalDateTime, formatLocalTime } from '../../utils/dateUtils';
 import type { SyncLog } from '../../types/sync';
 
 export default function AdminDashboard() {
@@ -36,7 +36,7 @@ export default function AdminDashboard() {
         <h2 className="text-2xl font-bold text-white">Admin Dashboard</h2>
         <p className="text-slate-500 text-sm mt-1">
           Overview of KLU Assignment Tracker system
-          {stats?.lastSync && ` · Last sync ${format(new Date(stats.lastSync), 'MMM d, h:mm a')}`}
+          {stats?.lastSync && ` · Last sync ${formatLocalDateTime(stats.lastSync, 'MMM d, h:mm a')}`}
         </p>
       </div>
 
@@ -65,10 +65,10 @@ export default function AdminDashboard() {
           />
           <StatCard
             title="Last Sync"
-            value={stats.lastSync ? format(new Date(stats.lastSync), 'h:mm a') : 'Never'}
+            value={stats.lastSync ? formatLocalTime(stats.lastSync) : 'Never'}
             icon={<FiRefreshCw size={20} />}
             color="text-amber-400" bgColor="bg-amber-500/10"
-            description={stats.lastSync ? format(new Date(stats.lastSync), 'MMM d') : undefined}
+            description={stats.lastSync ? formatLocalDateTime(stats.lastSync, 'MMM d') : undefined}
           />
         </div>
       )}
@@ -102,7 +102,7 @@ export default function AdminDashboard() {
                     <p className="text-xs text-slate-500">{log.studentId}</p>
                   </td>
                   <td className="px-6 py-3.5 hidden sm:table-cell text-xs text-slate-400">
-                    {format(new Date(log.triggeredAt), 'MMM d, h:mm a')}
+                    {formatLocalDateTime(log.triggeredAt, 'MMM d, h:mm a')}
                   </td>
                   <td className="px-6 py-3.5">
                     <Badge status={log.status} />

@@ -13,7 +13,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -40,8 +41,8 @@ import java.util.List;
 public class NotificationDispatchService {
 
     private static final Logger log = LoggerFactory.getLogger(NotificationDispatchService.class);
-    private static final DateTimeFormatter DUE_DATE_FMT = DateTimeFormatter.ofPattern("d MMM, h:mm a");
-    private static final DateTimeFormatter ISO_FMT = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+    private static final DateTimeFormatter DUE_DATE_FMT = DateTimeFormatter.ofPattern("d MMM, h:mm a")
+            .withZone(ZoneId.of("Asia/Kolkata"));
 
     private final AssignmentRepository assignmentRepository;
     private final NotificationPreferencesRepository preferencesRepository;
@@ -66,7 +67,7 @@ public class NotificationDispatchService {
      * @param syncedAt   timestamp of when the sync completed
      * @param syncWindow how many minutes back to look for "new" assignments
      */
-    public void dispatchForUser(String userId, LocalDateTime syncedAt, int syncWindow) {
+    public void dispatchForUser(String userId, Instant syncedAt, int syncWindow) {
         if (!pushNotificationService.isConfigured()) {
             return;
         }
@@ -86,14 +87,14 @@ public class NotificationDispatchService {
     }
 
     private void evaluateAndDispatch(Assignment a, NotificationPreferences prefs,
-                                      LocalDateTime syncedAt, int syncWindow) {
-        LocalDateTime now = LocalDateTime.now();
+                                      Instant syncedAt, int syncWindow) {
+        Instant now = Instant.now();
         String userId = a.getUserId();
         String assignmentId = a.getId();
         String courseName = a.getCourseName() != null ? a.getCourseName() : "Course";
         String title = a.getTitle() != null ? a.getTitle() : "Assignment";
-        LocalDateTime dueDate = a.getDueDate();
-        String dueDateStr = dueDate != null ? dueDate.format(ISO_FMT) : "";
+        Instant dueDate = a.getDueDate();
+        String dueDateStr = dueDate != null ? dueDate.toString() : "";
 
         // ── 1. NEW ASSIGNMENT ─────────────────────────────────────────────────
         if (prefs.isNewAssignment() && a.getFirstSeen() != null) {
@@ -104,7 +105,7 @@ public class NotificationDispatchService {
                     pushNotificationService.sendToUser(
                         userId,
                         "🔔 New Assignment",
-                        courseName + " — " + title + (dueDate != null ? ". Due: " + dueDate.format(DUE_DATE_FMT) : ""),
+                        courseName + " — " + title + (dueDate != null ? ". Due: " + DUE_DATE_FMT.format(dueDate) : ""),
                         assignmentId
                     )
                 );
@@ -124,7 +125,7 @@ public class NotificationDispatchService {
                 pushNotificationService.sendToUser(
                     userId,
                     "📅 Due Tomorrow",
-                    courseName + " — " + title + " is due tomorrow at " + dueDate.format(DUE_DATE_FMT),
+                    courseName + " — " + title + " is due tomorrow at " + DUE_DATE_FMT.format(dueDate),
                     assignmentId
                 )
             );
@@ -138,7 +139,7 @@ public class NotificationDispatchService {
                 pushNotificationService.sendToUser(
                     userId,
                     "⏰ Due Today",
-                    courseName + " — " + title + " is due today at " + dueDate.format(DUE_DATE_FMT),
+                    courseName + " — " + title + " is due today at " + DUE_DATE_FMT.format(dueDate),
                     assignmentId
                 )
             );
@@ -150,7 +151,7 @@ public class NotificationDispatchService {
                 pushNotificationService.sendToUser(
                     userId,
                     "🚨 Assignment Overdue",
-                    courseName + " — " + title + " was due on " + dueDate.format(DUE_DATE_FMT),
+                    courseName + " — " + title + " was due on " + DUE_DATE_FMT.format(dueDate),
                     assignmentId
                 )
             );
@@ -169,7 +170,7 @@ public class NotificationDispatchService {
      */
     private void checkDeadlineChanged(String userId, String assignmentId,
                                        String courseName, String title,
-                                       LocalDateTime currentDueDate, String currentDueDateStr) {
+                                       Instant currentDueDate, String currentDueDateStr) {
         // Look up any previously recorded DUE_TOMORROW/TODAY notification — if exists and due date differs → changed
         sentNotificationRepository.findByUserIdAndAssignmentIdAndNotificationType(
                 userId, assignmentId, NotificationType.DUE_TOMORROW)
@@ -179,7 +180,7 @@ public class NotificationDispatchService {
                         pushNotificationService.sendToUser(
                             userId,
                             "⚠️ Deadline Changed",
-                            courseName + " — " + title + ". New deadline: " + currentDueDate.format(DUE_DATE_FMT),
+                            courseName + " — " + title + ". New deadline: " + (currentDueDate != null ? DUE_DATE_FMT.format(currentDueDate) : ""),
                             assignmentId
                         )
                     );
@@ -200,7 +201,7 @@ public class NotificationDispatchService {
                     .assignmentId(assignmentId)
                     .notificationType(type)
                     .dueDateVersion(dueDateVersion)
-                    .sentAt(LocalDateTime.now())
+                    .sentAt(Instant.now())
                     .build();
             sentNotificationRepository.save(record);
             // Only send if save succeeded (dedup check passed)

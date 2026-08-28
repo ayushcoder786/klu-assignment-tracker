@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * Represents an assignment from a Moodle course.
@@ -42,21 +42,21 @@ public class Assignment {
     /** Full description / instructions for the assignment */
     private String description;
 
-    /** Deadline: when the assignment is due */
-    private LocalDateTime dueDate;
+    /** Deadline: when the assignment is due (UTC) */
+    private Instant dueDate;
 
-    /** Cut-off date: after this, no more submissions are accepted */
-    private LocalDateTime cutoffDate;
+    /** Cut-off date: after this, no more submissions are accepted (UTC) */
+    private Instant cutoffDate;
 
     /** Whether the assignment is PENDING, SUBMITTED, OVERDUE, or GRADED */
     @Builder.Default
     private AssignmentStatus status = AssignmentStatus.PENDING;
 
-    /** When we first discovered this assignment from Moodle */
+    /** When we first discovered this assignment from Moodle (UTC) */
     @Builder.Default
-    private LocalDateTime firstSeen = LocalDateTime.now();
+    private Instant firstSeen = Instant.now();
 
-    /** When we last refreshed this assignment's data from Moodle */
+    /** When we last refreshed this assignment's data from Moodle (UTC) */
     @Builder.Default
-    private LocalDateTime lastChecked = LocalDateTime.now();
+    private Instant lastChecked = Instant.now();
 }

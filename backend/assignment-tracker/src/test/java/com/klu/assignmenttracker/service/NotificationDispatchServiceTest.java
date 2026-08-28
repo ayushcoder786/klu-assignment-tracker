@@ -16,7 +16,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DuplicateKeyException;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
@@ -68,7 +69,7 @@ class NotificationDispatchServiceTest {
                 .title("Data Structures Assignment")
                 .courseName("Data Structures")
                 .status(AssignmentStatus.PENDING)
-                .firstSeen(LocalDateTime.now().minusMinutes(5))  // Seen 5 min ago
+                .firstSeen(Instant.now().minus(5, ChronoUnit.MINUTES))  // Seen 5 min ago
                 .build();
         when(assignmentRepository.findByUserId(USER_ID)).thenReturn(List.of(assignment));
 
@@ -77,7 +78,7 @@ class NotificationDispatchServiceTest {
                 .thenAnswer(inv -> inv.getArgument(0));
 
         // Act
-        dispatchService.dispatchForUser(USER_ID, LocalDateTime.now(), 30);
+        dispatchService.dispatchForUser(USER_ID, Instant.now(), 30);
 
         // Assert
         ArgumentCaptor<String> titleCaptor = ArgumentCaptor.forClass(String.class);
@@ -94,7 +95,7 @@ class NotificationDispatchServiceTest {
         when(preferencesRepository.findByUserId(USER_ID)).thenReturn(Optional.of(prefs));
 
         // Due in 23 hours — within 20-28 hour window
-        LocalDateTime dueDate = LocalDateTime.now().plusHours(23);
+        Instant dueDate = Instant.now().plus(23, ChronoUnit.HOURS);
         Assignment assignment = Assignment.builder()
                 .id(ASSIGNMENT_ID)
                 .userId(USER_ID)
@@ -102,7 +103,7 @@ class NotificationDispatchServiceTest {
                 .courseName("Operating Systems")
                 .status(AssignmentStatus.PENDING)
                 .dueDate(dueDate)
-                .firstSeen(LocalDateTime.now().minusDays(5))  // Not "new"
+                .firstSeen(Instant.now().minus(5, ChronoUnit.DAYS))  // Not "new"
                 .build();
         when(assignmentRepository.findByUserId(USER_ID)).thenReturn(List.of(assignment));
         when(sentNotificationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -110,7 +111,7 @@ class NotificationDispatchServiceTest {
                 .thenReturn(Optional.empty());
 
         // Act
-        dispatchService.dispatchForUser(USER_ID, LocalDateTime.now(), 30);
+        dispatchService.dispatchForUser(USER_ID, Instant.now(), 30);
 
         // Assert
         ArgumentCaptor<String> titleCaptor = ArgumentCaptor.forClass(String.class);
@@ -126,7 +127,7 @@ class NotificationDispatchServiceTest {
                 .userId(USER_ID).overdue(true).build();
         when(preferencesRepository.findByUserId(USER_ID)).thenReturn(Optional.of(prefs));
 
-        LocalDateTime overdueDate = LocalDateTime.now().minusDays(1);
+        Instant overdueDate = Instant.now().minus(1, ChronoUnit.DAYS);
         Assignment assignment = Assignment.builder()
                 .id(ASSIGNMENT_ID)
                 .userId(USER_ID)
@@ -134,7 +135,7 @@ class NotificationDispatchServiceTest {
                 .courseName("Mathematics")
                 .status(AssignmentStatus.OVERDUE)
                 .dueDate(overdueDate)
-                .firstSeen(LocalDateTime.now().minusDays(10))
+                .firstSeen(Instant.now().minus(10, ChronoUnit.DAYS))
                 .build();
         when(assignmentRepository.findByUserId(USER_ID)).thenReturn(List.of(assignment));
 
@@ -142,7 +143,7 @@ class NotificationDispatchServiceTest {
         when(sentNotificationRepository.save(any())).thenThrow(new DuplicateKeyException("duplicate"));
 
         // Act
-        dispatchService.dispatchForUser(USER_ID, LocalDateTime.now(), 30);
+        dispatchService.dispatchForUser(USER_ID, Instant.now(), 30);
 
         // Assert — push should NOT be called because save threw DuplicateKeyException
         verify(pushNotificationService, never()).sendToUser(any(), any(), any(), any());
@@ -155,7 +156,7 @@ class NotificationDispatchServiceTest {
         when(pushNotificationService.isConfigured()).thenReturn(false);
 
         // Act
-        dispatchService.dispatchForUser(USER_ID, LocalDateTime.now(), 30);
+        dispatchService.dispatchForUser(USER_ID, Instant.now(), 30);
 
         // Assert — nothing should be called
         verifyNoInteractions(assignmentRepository, preferencesRepository, sentNotificationRepository);
@@ -169,7 +170,7 @@ class NotificationDispatchServiceTest {
                 .userId(USER_ID).overdue(true).build();
         when(preferencesRepository.findByUserId(USER_ID)).thenReturn(Optional.of(prefs));
 
-        LocalDateTime pastDue = LocalDateTime.now().minusHours(2);
+        Instant pastDue = Instant.now().minus(2, ChronoUnit.HOURS);
         Assignment assignment = Assignment.builder()
                 .id(ASSIGNMENT_ID)
                 .userId(USER_ID)
@@ -177,7 +178,7 @@ class NotificationDispatchServiceTest {
                 .courseName("Physics")
                 .status(AssignmentStatus.OVERDUE)
                 .dueDate(pastDue)
-                .firstSeen(LocalDateTime.now().minusDays(5))
+                .firstSeen(Instant.now().minus(5, ChronoUnit.DAYS))
                 .build();
         when(assignmentRepository.findByUserId(USER_ID)).thenReturn(List.of(assignment));
         when(sentNotificationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -185,7 +186,7 @@ class NotificationDispatchServiceTest {
                 .thenReturn(Optional.empty());
 
         // Act
-        dispatchService.dispatchForUser(USER_ID, LocalDateTime.now(), 30);
+        dispatchService.dispatchForUser(USER_ID, Instant.now(), 30);
 
         // Assert
         ArgumentCaptor<String> titleCaptor = ArgumentCaptor.forClass(String.class);

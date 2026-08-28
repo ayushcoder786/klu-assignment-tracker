@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, type ReactNode } from 'react';
 import { assignmentService } from '../services/assignmentService';
+import { authService } from '../services/authService';
 import { useAuth } from './AuthContext';
 
 interface SyncContextValue {
@@ -27,13 +28,22 @@ export function SyncProvider({ children }: { children: ReactNode }) {
 
     try {
       const res = await assignmentService.triggerSync();
-      if (!res.success || res.message.toLowerCase().includes('unavailable')) {
+      const status = res.syncLog?.status;
+      const isFailed = !res.success
+        || status === 'FAILED'
+        || status === 'SKIPPED'
+        || res.message.toLowerCase().includes('unavailable')
+        || res.message.toLowerCase().includes('skipped');
+
+      if (isFailed) {
         setLastSyncError(res.message);
       } else {
         setLastSyncMessage(res.message);
-        // Update student lastSync timestamp in session if user object exists
-        if (authState.user) {
-          (authState.user as any).lastSync = new Date().toISOString();
+        // Update student lastSync timestamp in session ONLY on real success
+        if (authState.user && 'studentId' in authState.user) {
+          const syncTimestamp = res.syncLog?.completedAt || res.syncLog?.startedAt || new Date().toISOString();
+          authState.user.lastSync = syncTimestamp;
+          authService.persistUserSession(authState.user);
         }
       }
       // Trigger re-render across all consumers so existing assignments are refreshed

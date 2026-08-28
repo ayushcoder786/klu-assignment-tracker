@@ -16,17 +16,17 @@ function StudentLayoutContent() {
   const displayName = getCleanStudentName(student?.name);
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-950 via-indigo-950/20 to-slate-950 overflow-hidden text-slate-100">
+    <div className="flex h-screen bg-[#070b14] overflow-hidden text-slate-100">
       <StudentSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#070b14]">
         <Topbar
           title="Student Dashboard"
           subtitle={
             student ? (
               <div className="flex flex-col">
-                <span className="text-xs font-semibold text-slate-200 leading-tight">{displayName}</span>
+                <span className="text-xs font-bold text-slate-200 leading-tight">{displayName}</span>
                 {student.studentId && (
-                  <span className="text-[10px] text-slate-400 font-mono leading-normal mt-0.5">{student.studentId}</span>
+                  <span className="text-xs text-indigo-300 font-mono leading-normal mt-0.5">{student.studentId}</span>
                 )}
               </div>
             ) : undefined
@@ -39,12 +39,12 @@ function StudentLayoutContent() {
 
         {/* Sync notification banners */}
         {lastSyncMessage && (
-          <div className="mx-4 sm:mx-6 mt-3 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-center justify-between">
+          <div className="mx-4 sm:mx-6 mt-3 px-4 py-2.5 rounded-xl bg-emerald-950/70 border border-emerald-500/40 text-emerald-200 text-xs font-semibold flex items-center justify-between shadow-lg">
             <span>✨ {lastSyncMessage}</span>
           </div>
         )}
         {lastSyncError && (
-          <div className="mx-4 sm:mx-6 mt-3 px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs flex items-center justify-between">
+          <div className="mx-4 sm:mx-6 mt-3 px-4 py-2.5 rounded-xl bg-amber-950/70 border border-amber-500/40 text-amber-200 text-xs font-semibold flex items-center justify-between shadow-lg">
             <span>⚠️ {lastSyncError}</span>
           </div>
         )}

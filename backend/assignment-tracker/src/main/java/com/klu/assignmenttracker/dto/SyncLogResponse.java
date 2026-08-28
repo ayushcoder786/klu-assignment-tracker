@@ -7,7 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * API response representing a SyncLog entry.
@@ -20,8 +20,8 @@ public class SyncLogResponse {
 
     private String id;
     private String userId;
-    private LocalDateTime startedAt;
-    private LocalDateTime completedAt;
+    private Instant startedAt;
+    private Instant completedAt;
     private SyncStatus status;
     private int assignmentsFound;
     private String errorMessage;

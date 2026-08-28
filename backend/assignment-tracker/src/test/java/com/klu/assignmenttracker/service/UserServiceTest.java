@@ -79,8 +79,35 @@ class UserServiceTest {
 
         assertNotNull(authResponse);
         assertEquals("jwt-token-123", authResponse.getToken());
+        assertNotNull(authResponse.getUser().getLastLogin(), "lastLogin must be set after successful student login");
+        assertNotNull(user.getLastLogin(), "User entity lastLogin must be set");
         verify(moodleTokenCache).storeToken("user-123", "moodle-token-xyz");
         verify(syncService).syncUserAssignmentsAsync(user, "moodle-token-xyz");
+    }
+
+    @Test
+    void testAdminLogin_Success_UpdatesLastLogin() {
+        com.klu.assignmenttracker.dto.LoginRequest request = new com.klu.assignmenttracker.dto.LoginRequest();
+        request.setEmail("admin@example.com");
+        request.setPassword("admin-pass");
+
+        User user = User.builder()
+                .id("admin-123")
+                .email("admin@example.com")
+                .role(Role.ADMIN)
+                .build();
+
+        when(userRepository.findByEmail("admin@example.com")).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(jwtTokenProvider.generateToken("admin@example.com")).thenReturn("jwt-admin-token");
+
+        AuthResponse authResponse = userService.login(request);
+
+        assertNotNull(authResponse);
+        assertEquals("jwt-admin-token", authResponse.getToken());
+        assertNotNull(authResponse.getUser().getLastLogin(), "lastLogin must be set after successful admin login");
+        assertNotNull(user.getLastLogin(), "Admin user entity lastLogin must be set");
+        verify(userRepository).save(user);
     }
 
     @Test
@@ -144,6 +171,7 @@ class UserServiceTest {
                 .thenThrow(new BadCredentialsException("Invalid Student ID or password."));
 
         assertThrows(BadCredentialsException.class, () -> userService.studentLogin(request));
+        verify(userRepository, never()).save(any());
         verify(moodleTokenCache, never()).storeToken(any(), any());
         verify(syncService, never()).syncUserAssignmentsAsync(any(), any());
     }

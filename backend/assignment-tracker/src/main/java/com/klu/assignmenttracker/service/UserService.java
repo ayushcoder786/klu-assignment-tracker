@@ -18,7 +18,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -164,7 +164,7 @@ public class UserService {
         }
 
         // ── Step 4: Update lastLogin & save user ─────────────────────────────
-        user.setLastLogin(LocalDateTime.now());
+        user.setLastLogin(Instant.now());
         User savedUser = userRepository.save(user);
         log.info("Login successful: studentId={}, role={}, lmsAvailable={}",
                 savedUser.getStudentId(), savedUser.getRole(), lmsAvailable);
@@ -208,7 +208,7 @@ public class UserService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", request.getEmail()));
 
-        user.setLastLogin(LocalDateTime.now());
+        user.setLastLogin(Instant.now());
         userRepository.save(user);
         log.info("Admin login successful: email={}", user.getEmail());
 

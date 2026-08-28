@@ -6,22 +6,22 @@ type BadgeVariant = AssignmentStatus | AccountStatus | SyncStatusType | string;
 
 const badgeStyles: Record<string, string> = {
   // Assignment statuses
-  pending:   'bg-amber-500/10 text-amber-300 border-amber-500/20',
-  submitted: 'bg-blue-500/10 text-blue-300 border-blue-500/20',
-  overdue:   'bg-red-500/10 text-red-300 border-red-500/20',
-  upcoming:  'bg-violet-500/10 text-violet-300 border-violet-500/20',
-  graded:    'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
-  draft:     'bg-slate-500/10 text-slate-400 border-slate-500/20',
+  pending:   'bg-amber-950/70 text-amber-300 border-amber-500/40 font-semibold',
+  submitted: 'bg-blue-950/70 text-blue-300 border-blue-500/40 font-semibold',
+  overdue:   'bg-red-950/70 text-red-300 border-red-500/40 font-semibold',
+  upcoming:  'bg-violet-950/70 text-violet-300 border-violet-500/40 font-semibold',
+  graded:    'bg-emerald-950/70 text-emerald-300 border-emerald-500/40 font-semibold',
+  draft:     'bg-slate-800 text-slate-300 border-slate-700 font-semibold',
   // Account statuses
-  active:    'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
-  inactive:  'bg-slate-500/10 text-slate-400 border-slate-500/20',
-  suspended: 'bg-red-500/10 text-red-300 border-red-500/20',
+  active:    'bg-emerald-950/70 text-emerald-300 border-emerald-500/40 font-semibold',
+  inactive:  'bg-slate-800 text-slate-300 border-slate-700 font-semibold',
+  suspended: 'bg-red-950/70 text-red-300 border-red-500/40 font-semibold',
   // Sync statuses
-  success:   'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
-  failed:    'bg-red-500/10 text-red-300 border-red-500/20',
-  running:   'bg-blue-500/10 text-blue-300 border-blue-500/20',
-  skipped:   'bg-amber-500/10 text-amber-300 border-amber-500/20',
-  partial:   'bg-amber-500/10 text-amber-300 border-amber-500/20',
+  success:   'bg-emerald-950/70 text-emerald-300 border-emerald-500/40 font-semibold',
+  failed:    'bg-red-950/70 text-red-300 border-red-500/40 font-semibold',
+  running:   'bg-blue-950/70 text-blue-300 border-blue-500/40 font-semibold',
+  skipped:   'bg-amber-950/70 text-amber-300 border-amber-500/40 font-semibold',
+  partial:   'bg-amber-950/70 text-amber-300 border-amber-500/40 font-semibold',
 };
 
 const badgeDots: Record<string, string> = {

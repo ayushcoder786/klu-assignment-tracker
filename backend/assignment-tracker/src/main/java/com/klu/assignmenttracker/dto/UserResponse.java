@@ -8,7 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * Safe representation of a User for API responses.
@@ -26,9 +26,9 @@ public class UserResponse {
     private String email;
     private Role role;
     private UserStatus status;
-    private LocalDateTime createdAt;
-    private LocalDateTime lastLogin;
-    private LocalDateTime lastSync;
+    private Instant createdAt;
+    private Instant lastLogin;
+    private Instant lastSync;
 
     /**
      * Convert a User model to a UserResponse (safe to return in API).

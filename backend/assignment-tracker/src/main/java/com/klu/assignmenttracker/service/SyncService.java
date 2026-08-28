@@ -26,8 +26,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -114,7 +112,7 @@ public class SyncService {
 
         SyncLog syncLog = SyncLog.builder()
                 .userId(user.getId())
-                .startedAt(LocalDateTime.now())
+                .startedAt(Instant.now())
                 .status(SyncStatus.RUNNING)
                 .assignmentsFound(0)
                 .build();
@@ -184,8 +182,8 @@ public class SyncService {
                             }
 
                             String moodleAssignmentId = String.valueOf(item.getId());
-                            LocalDateTime dueDate = parseTimestamp(item.getDuedate());
-                            LocalDateTime cutoffDate = parseTimestamp(item.getCutoffdate());
+                            Instant dueDate = parseTimestamp(item.getDuedate());
+                            Instant cutoffDate = parseTimestamp(item.getCutoffdate());
 
                             // Check submission status from Moodle
                             AssignmentStatus status = determineAssignmentStatus(
@@ -198,7 +196,7 @@ public class SyncService {
                                     .orElseGet(() -> Assignment.builder()
                                             .userId(user.getId())
                                             .moodleAssignmentId(moodleAssignmentId)
-                                            .firstSeen(LocalDateTime.now())
+                                            .firstSeen(Instant.now())
                                             .build());
 
                             assignment.setCourseId(courseDocId);
@@ -208,7 +206,7 @@ public class SyncService {
                             assignment.setDueDate(dueDate);
                             assignment.setCutoffDate(cutoffDate);
                             assignment.setStatus(status);
-                            assignment.setLastChecked(LocalDateTime.now());
+                            assignment.setLastChecked(Instant.now());
 
                             assignmentRepository.save(assignment);
                             totalAssignments++;
@@ -218,12 +216,12 @@ public class SyncService {
             }
 
             // ── Step 4: Finalize User & SyncLog ───────────────────────────────
-            user.setLastSync(LocalDateTime.now());
+            user.setLastSync(Instant.now());
             userRepository.save(user);
 
             syncLog.setStatus(SyncStatus.SUCCESS);
             syncLog.setAssignmentsFound(totalAssignments);
-            syncLog.setCompletedAt(LocalDateTime.now());
+            syncLog.setCompletedAt(Instant.now());
             syncLog.setErrorMessage(null);
             SyncLog savedLog = syncLogRepository.save(syncLog);
 
@@ -240,7 +238,7 @@ public class SyncService {
                     user.getStudentId(), e.getMessage());
 
             syncLog.setStatus(SyncStatus.FAILED);
-            syncLog.setCompletedAt(LocalDateTime.now());
+            syncLog.setCompletedAt(Instant.now());
             syncLog.setErrorMessage("LMS is temporarily unavailable. Please try syncing again later.");
             SyncLog savedLog = syncLogRepository.save(syncLog);
 
@@ -274,8 +272,8 @@ public class SyncService {
 
         SyncLog syncLog = SyncLog.builder()
                 .userId(user.getId())
-                .startedAt(LocalDateTime.now())
-                .completedAt(LocalDateTime.now())
+                .startedAt(Instant.now())
+                .completedAt(Instant.now())
                 .status(SyncStatus.SKIPPED)
                 .assignmentsFound(0)
                 .errorMessage("No active LMS session token in memory. Please log in again to sync live from Moodle.")
@@ -321,7 +319,7 @@ public class SyncService {
     // Helper Methods
     // ─────────────────────────────────────────────────────────────────────────
 
-    private AssignmentStatus determineAssignmentStatus(String moodleToken, long assignId, LocalDateTime dueDate) {
+    private AssignmentStatus determineAssignmentStatus(String moodleToken, long assignId, Instant dueDate) {
         MoodleSubmissionStatusResponse subStatus = moodleWebService.getSubmissionStatus(moodleToken, assignId);
 
         if (subStatus != null && subStatus.getLastattempt() != null) {
@@ -337,18 +335,18 @@ public class SyncService {
             }
         }
 
-        if (dueDate != null && dueDate.isBefore(LocalDateTime.now())) {
+        if (dueDate != null && dueDate.isBefore(Instant.now())) {
             return AssignmentStatus.OVERDUE;
         }
 
         return AssignmentStatus.PENDING;
     }
 
-    private LocalDateTime parseTimestamp(Long epochSeconds) {
+    private Instant parseTimestamp(Long epochSeconds) {
         if (epochSeconds == null || epochSeconds <= 0) {
             return null;
         }
-        return LocalDateTime.ofInstant(Instant.ofEpochSecond(epochSeconds), ZoneId.systemDefault());
+        return Instant.ofEpochSecond(epochSeconds);
     }
 
     private String stripHtml(String html) {

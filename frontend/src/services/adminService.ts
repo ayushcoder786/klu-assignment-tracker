@@ -67,12 +67,12 @@ export const adminService = {
         const data = await res.json();
         return (data || []).map((l: any) => ({
           id: l.id,
-          studentId: l.studentId,
-          studentName: l.studentName || l.studentId,
-          triggeredAt: l.triggeredAt || l.createdAt || new Date().toISOString(),
+          studentId: l.studentId || l.userId,
+          studentName: l.studentName || l.studentId || l.userId,
+          triggeredAt: l.startedAt || l.triggeredAt || l.createdAt || null,
           completedAt: l.completedAt,
           status: (l.status ? l.status.toLowerCase() : 'success') as SyncLog['status'],
-          assignmentsFetched: l.assignmentsFetched || 0,
+          assignmentsFetched: l.assignmentsFound || l.assignmentsFetched || 0,
           assignmentsUpdated: l.assignmentsUpdated || 0,
           triggeredBy: (l.triggeredBy ? l.triggeredBy.toLowerCase() : 'scheduled') as SyncLog['triggeredBy'],
           errorMessage: l.errorMessage,
@@ -91,9 +91,9 @@ export const adminService = {
     const logs = await adminService.getSyncLogs();
     const students = await adminService.getStudents();
     const failed = logs.filter(l => l.status === 'failed').length;
-    const lastSync = logs[0]?.triggeredAt || new Date().toISOString();
+    const lastSync = logs[0]?.triggeredAt || null;
     return {
-      lastGlobalSync: lastSync,
+      lastGlobalSync: lastSync || '',
       nextScheduledSync: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
       totalStudentsSynced: students.length,
       failedSyncs: failed,
@@ -143,7 +143,7 @@ export const adminService = {
       activeStudents: students.length,
       failedSyncs: failed,
       totalAssignments: 0,
-      lastSync: logs[0]?.triggeredAt || new Date().toISOString(),
+      lastSync: logs[0]?.triggeredAt || null,
     };
   },
 };

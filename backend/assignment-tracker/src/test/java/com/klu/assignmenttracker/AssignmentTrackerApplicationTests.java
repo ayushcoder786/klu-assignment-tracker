@@ -37,6 +37,15 @@ class AssignmentTrackerApplicationTests {
     @MockitoBean
     private SyncLogRepository syncLogRepository;
 
+    @MockitoBean
+    private com.klu.assignmenttracker.repository.PushSubscriptionRepository pushSubscriptionRepository;
+
+    @MockitoBean
+    private com.klu.assignmenttracker.repository.NotificationPreferencesRepository notificationPreferencesRepository;
+
+    @MockitoBean
+    private com.klu.assignmenttracker.repository.SentNotificationRepository sentNotificationRepository;
+
     /**
      * Verifies that the entire Spring application context starts up
      * without errors. This validates all beans, configurations, and

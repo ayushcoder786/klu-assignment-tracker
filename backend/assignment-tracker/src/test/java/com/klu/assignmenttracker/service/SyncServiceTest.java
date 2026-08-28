@@ -23,6 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -140,6 +141,7 @@ class SyncServiceTest {
         verify(assignmentRepository).save(any(Assignment.class));
         verify(userRepository).save(any(User.class));
         assertEquals("Test Student", user.getName());
+        assertNotNull(user.getLastSync(), "lastSync must be updated upon successful LMS sync");
     }
 
     @Test
@@ -164,14 +166,17 @@ class SyncServiceTest {
         SyncResponse response = syncService.triggerSync("2200030001");
         assertNotNull(response);
         verify(moodleWebService).getSiteInfo("cached-token");
+        assertNotNull(user.getLastSync(), "lastSync must be updated upon successful triggerSync");
     }
 
     @Test
-    void testSyncUserAssignments_LmsUnavailable_ReturnsFailedGracefully() {
+    void testSyncUserAssignments_LmsUnavailable_PreservesPreviousLastSync() {
+        Instant initialSync = Instant.parse("2026-08-01T10:00:00Z");
         User user = User.builder()
                 .id("user-123")
                 .studentId("2200030001")
                 .role(Role.STUDENT)
+                .lastSync(initialSync)
                 .build();
 
         SyncLog dummyLog = SyncLog.builder().id("log-1").userId(user.getId()).build();
@@ -185,5 +190,7 @@ class SyncServiceTest {
 
         assertNotNull(response);
         assertEquals("LMS is temporarily unavailable. Please try syncing again later.", response.getMessage());
+        // Verify lastSync was NOT modified or overwritten
+        assertEquals(initialSync, user.getLastSync(), "Previous lastSync timestamp must be preserved on sync failure");
     }
 }

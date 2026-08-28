@@ -10,7 +10,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * Deduplication ledger: records every push notification that has been sent.
@@ -55,5 +55,5 @@ public class SentNotification {
     private String dueDateVersion = "";
 
     @Builder.Default
-    private LocalDateTime sentAt = LocalDateTime.now();
+    private Instant sentAt = Instant.now();
 }

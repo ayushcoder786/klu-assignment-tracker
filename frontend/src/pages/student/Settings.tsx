@@ -33,16 +33,16 @@ interface ToggleProps {
 
 function ToggleSetting({ id, label, description, checked, onChange, disabled }: ToggleProps) {
   return (
-    <div className={`flex items-center gap-4 py-4 border-b border-white/5 last:border-0 ${disabled ? 'opacity-40' : ''}`}>
+    <div className={`flex items-center gap-4 py-4 border-b border-slate-800 last:border-0 ${disabled ? 'opacity-40' : ''}`}>
       <div className="flex-1">
-        <p className="text-sm font-medium text-white">{label}</p>
-        <p className="text-xs text-slate-500 mt-0.5">{description}</p>
+        <p className="text-sm font-bold text-white">{label}</p>
+        <p className="text-xs text-slate-300 font-medium mt-0.5">{description}</p>
       </div>
       <button
         id={id}
         disabled={disabled}
         onClick={() => !disabled && onChange(!checked)}
-        className={`relative w-11 h-6 rounded-full transition-colors duration-300 cursor-pointer ${checked ? 'bg-violet-600' : 'bg-white/10'} disabled:cursor-not-allowed`}
+        className={`relative w-11 h-6 rounded-full transition-colors duration-300 cursor-pointer ${checked ? 'bg-violet-600' : 'bg-slate-800 border border-slate-700'} disabled:cursor-not-allowed`}
         aria-checked={checked}
         role="switch"
       >
@@ -58,14 +58,14 @@ type PermissionState = NotificationPermission | 'unsupported';
 
 function PermissionBadge({ state }: { state: PermissionState }) {
   const configs: Record<PermissionState, { label: string; color: string }> = {
-    granted: { label: 'Allowed', color: 'text-emerald-300 bg-emerald-500/10 border-emerald-500/20' },
-    denied: { label: 'Blocked', color: 'text-red-300 bg-red-500/10 border-red-500/20' },
-    default: { label: 'Not set', color: 'text-slate-300 bg-white/5 border-white/10' },
-    unsupported: { label: 'Unsupported', color: 'text-amber-300 bg-amber-500/10 border-amber-500/20' },
+    granted: { label: 'Allowed', color: 'text-emerald-300 bg-emerald-950/80 border-emerald-500/40 font-bold' },
+    denied: { label: 'Blocked', color: 'text-red-300 bg-red-950/80 border-red-500/40 font-bold' },
+    default: { label: 'Not set', color: 'text-slate-300 bg-slate-800 border-slate-700 font-bold' },
+    unsupported: { label: 'Unsupported', color: 'text-amber-300 bg-amber-950/80 border-amber-500/40 font-bold' },
   };
   const { label, color } = configs[state];
   return (
-    <span className={`inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full border ${color}`}>
+    <span className={`inline-block text-xs font-bold px-2.5 py-0.5 rounded-full border ${color}`}>
       {label}
     </span>
   );

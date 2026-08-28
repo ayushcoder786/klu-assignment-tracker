@@ -8,7 +8,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * Represents a registered user in the system.
@@ -55,13 +55,13 @@ public class User {
     @Builder.Default
     private UserStatus status = UserStatus.ACTIVE;
 
-    /** When this account was created */
+    /** When this account was created (UTC) */
     @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private Instant createdAt = Instant.now();
 
-    /** Last time the user successfully logged in */
-    private LocalDateTime lastLogin;
+    /** Last time the user successfully logged in (UTC) */
+    private Instant lastLogin;
 
-    /** Last time a successful Moodle sync was done for this user */
-    private LocalDateTime lastSync;
+    /** Last time a successful Moodle sync was done for this user (UTC) */
+    private Instant lastSync;
 }

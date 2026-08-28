@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { format } from 'date-fns';
 import { FiSearch, FiUsers, FiArrowRight } from 'react-icons/fi';
 import { Badge } from '../../components/common/Badge';
 import { LoadingSpinner, SkeletonRow } from '../../components/common/LoadingSpinner';
 import { adminService } from '../../services/adminService';
+import { formatLocalDateTime } from '../../utils/dateUtils';
 import type { Student } from '../../types/user';
 
 export default function StudentsList() {
@@ -86,10 +86,10 @@ export default function StudentsList() {
                       <Badge status={s.status || 'active'} />
                     </td>
                     <td className="px-6 py-4 hidden md:table-cell text-xs text-slate-400">
-                      {s.lastLogin ? format(new Date(s.lastLogin), 'MMM d, h:mm a') : <span className="text-slate-600">Never</span>}
+                      {formatLocalDateTime(s.lastLogin, 'MMM d, h:mm a')}
                     </td>
                     <td className="px-6 py-4 hidden lg:table-cell text-xs text-slate-400">
-                      {s.lastSync ? format(new Date(s.lastSync), 'MMM d, h:mm a') : <span className="text-slate-600">Never</span>}
+                      {formatLocalDateTime(s.lastSync, 'MMM d, h:mm a')}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <Link

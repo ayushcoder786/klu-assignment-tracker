@@ -38,12 +38,14 @@ export function LoadingSpinner({ size = 'md', text, fullPage = false }: LoadingS
 
 export function SkeletonRow({ cols = 4 }: { cols?: number }) {
   return (
-    <tr>
+    <div className="flex items-center gap-4 py-3 animate-pulse">
       {Array.from({ length: cols }).map((_, i) => (
-        <td key={i} className="px-6 py-4">
-          <div className="h-4 rounded-lg bg-gray-100 animate-pulse" style={{ width: `${60 + (i % 3) * 15}%` }} />
-        </td>
+        <div
+          key={i}
+          className="h-4 rounded-lg bg-slate-800"
+          style={{ width: `${60 + (i % 3) * 15}%` }}
+        />
       ))}
-    </tr>
+    </div>
   );
 }

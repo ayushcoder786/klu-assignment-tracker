@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * Response / request body for GET and PUT /api/notifications/preferences.
@@ -23,7 +23,7 @@ public class NotificationPreferencesDto {
     private boolean dueToday;
     private boolean overdue;
     private boolean deadlineChanged;
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 
     public static NotificationPreferencesDto from(NotificationPreferences prefs) {
         return NotificationPreferencesDto.builder()

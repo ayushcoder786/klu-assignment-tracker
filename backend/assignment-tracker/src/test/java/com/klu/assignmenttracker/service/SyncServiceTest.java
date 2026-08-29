@@ -286,4 +286,93 @@ class SyncServiceTest {
         assertEquals("2500032102", logs.get(0).getStudentId());
         assertEquals("Ayush Kumar", logs.get(0).getStudentName());
     }
+
+    @Test
+    void testSyncUserAssignments_SyncsBothAssignmentsAndExams_Successfully() {
+        User user = User.builder()
+                .id("u-combo")
+                .studentId("2200030001")
+                .role(Role.STUDENT)
+                .build();
+
+        SyncLog dummyLog = SyncLog.builder().id("log-combo").userId(user.getId()).build();
+        when(syncLogRepository.save(any(SyncLog.class))).thenReturn(dummyLog);
+
+        MoodleSiteInfo siteInfo = MoodleSiteInfo.builder().userid(8888L).fullname("Combo Student").build();
+        when(moodleWebService.getSiteInfo("combo-token")).thenReturn(siteInfo);
+
+        MoodleCourse course = MoodleCourse.builder().id(202L).fullname("Operating Systems").shortname("OS").build();
+        when(moodleWebService.getEnrolledCourses("combo-token", 8888L)).thenReturn(List.of(course));
+
+        Course savedCourse = Course.builder().id("c-202").userId(user.getId()).moodleCourseId("202").name("Operating Systems").build();
+        when(courseRepository.findByUserIdAndMoodleCourseId(user.getId(), "202")).thenReturn(Optional.of(savedCourse));
+        when(courseRepository.save(any(Course.class))).thenReturn(savedCourse);
+
+        // Assignments
+        MoodleAssignmentItem assignItem = MoodleAssignmentItem.builder().id(701L).name("Process Scheduling Lab").build();
+        MoodleAssignmentCourse mac = MoodleAssignmentCourse.builder().id(202L).assignments(List.of(assignItem)).build();
+        when(moodleWebService.getAssignments("combo-token", List.of(202L)))
+                .thenReturn(MoodleAssignmentsResponse.builder().courses(List.of(mac)).build());
+        when(assignmentRepository.findByUserIdAndMoodleAssignmentId(user.getId(), "701")).thenReturn(Optional.empty());
+
+        // Exams / Quizzes
+        com.klu.assignmenttracker.dto.moodle.MoodleQuizItem quizItem = com.klu.assignmenttracker.dto.moodle.MoodleQuizItem.builder()
+                .id(801L)
+                .course(202L)
+                .name("CO-1 Quiz 1")
+                .build();
+        when(moodleWebService.getQuizzes("combo-token", List.of(202L)))
+                .thenReturn(com.klu.assignmenttracker.dto.moodle.MoodleQuizzesResponse.builder().quizzes(List.of(quizItem)).build());
+        when(examRepository.findByUserIdAndMoodleQuizId(user.getId(), "801")).thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class))).thenReturn(user);
+
+        SyncResponse response = syncService.syncUserAssignments(user, "combo-token");
+
+        assertNotNull(response);
+        verify(assignmentRepository).save(any(com.klu.assignmenttracker.model.Assignment.class));
+        verify(examRepository).save(any(com.klu.assignmenttracker.model.Exam.class));
+        verify(userRepository).save(any(User.class));
+        assertNotNull(user.getLastSync());
+    }
+
+    @Test
+    void testSyncUserAssignments_QuizFailure_StillSavesAssignments() {
+        User user = User.builder()
+                .id("u-partial")
+                .studentId("2200030001")
+                .role(Role.STUDENT)
+                .build();
+
+        SyncLog dummyLog = SyncLog.builder().id("log-partial").userId(user.getId()).build();
+        when(syncLogRepository.save(any(SyncLog.class))).thenReturn(dummyLog);
+
+        MoodleSiteInfo siteInfo = MoodleSiteInfo.builder().userid(8888L).fullname("Partial Student").build();
+        when(moodleWebService.getSiteInfo("partial-token")).thenReturn(siteInfo);
+
+        MoodleCourse course = MoodleCourse.builder().id(303L).fullname("Computer Networks").build();
+        when(moodleWebService.getEnrolledCourses("partial-token", 8888L)).thenReturn(List.of(course));
+
+        Course savedCourse = Course.builder().id("c-303").userId(user.getId()).moodleCourseId("303").name("Computer Networks").build();
+        when(courseRepository.findByUserIdAndMoodleCourseId(user.getId(), "303")).thenReturn(Optional.of(savedCourse));
+        when(courseRepository.save(any(Course.class))).thenReturn(savedCourse);
+
+        // Assignment succeeds
+        MoodleAssignmentItem assignItem = MoodleAssignmentItem.builder().id(901L).name("Socket Programming").build();
+        MoodleAssignmentCourse mac = MoodleAssignmentCourse.builder().id(303L).assignments(List.of(assignItem)).build();
+        when(moodleWebService.getAssignments("partial-token", List.of(303L)))
+                .thenReturn(MoodleAssignmentsResponse.builder().courses(List.of(mac)).build());
+        when(assignmentRepository.findByUserIdAndMoodleAssignmentId(user.getId(), "901")).thenReturn(Optional.empty());
+
+        // Quizzes throw exception
+        when(moodleWebService.getQuizzes("partial-token", List.of(303L)))
+                .thenThrow(new RuntimeException("Moodle Quiz API unreachable"));
+
+        when(userRepository.save(any(User.class))).thenReturn(user);
+
+        SyncResponse response = syncService.syncUserAssignments(user, "partial-token");
+
+        assertNotNull(response);
+        verify(assignmentRepository).save(any(com.klu.assignmenttracker.model.Assignment.class));
+        assertNotNull(user.getLastSync());
+    }
 }

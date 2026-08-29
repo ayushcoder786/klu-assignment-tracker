@@ -301,7 +301,7 @@ export default function StudentDashboard() {
                         </h5>
                       </Link>
                     </div>
-                    <div className="mt-2.5 pt-2 border-t border-slate-200 dark:border-slate-850 flex items-center justify-between">
+                    <div className="mt-2.5 pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
                       <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                         {close ? format(close, 'MMM d, h:mm a') : 'No deadline'}
                       </span>
@@ -559,7 +559,7 @@ export default function StudentDashboard() {
                 <Link
                   key={a.id}
                   to={`/assignments/${a.id}`}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 hover:bg-slate-50 dark:hover:bg-slate-850 dark:hover:bg-slate-800/60 transition-all duration-200 group"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all duration-200 group"
                 >
                   <div className="flex-1 min-w-0 pr-4">
                     <div className="flex items-center gap-2 mb-1.5">

@@ -266,7 +266,7 @@ export default function AssignmentList() {
                   const due = a.dueDate ? (typeof a.dueDate === 'string' ? parseISO(a.dueDate) : new Date(a.dueDate)) : null;
 
                   return (
-                    <tr key={a.id} className="hover:bg-slate-50 dark:hover:bg-slate-850 dark:hover:bg-slate-800/60 transition-colors group">
+                    <tr key={a.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors group">
                       <td className="px-6 py-4">
                         <span className="text-xs font-mono font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-200 dark:border-indigo-500/30 px-2.5 py-1 rounded-lg">
                           {a.courseName}

@@ -109,11 +109,11 @@ export default function SyncStatus() {
           {logs.map(log => {
             const { name, studentId } = formatStudentDisplay(log.studentName, log.studentId);
             return (
-              <div key={log.id} className="flex flex-col sm:flex-row sm:items-center gap-3 px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-850 transition-colors">
+              <div key={log.id} className="flex flex-col sm:flex-row sm:items-center gap-3 px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-semibold text-slate-900 dark:text-white">{name}</p>
-                    <code className="text-[10px] text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 px-1.5 py-0.5 rounded font-bold border border-cyan-200 dark:border-transparent">{studentId}</code>
+                    <code className="text-[10px] text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 px-1.5 py-0.5 rounded font-bold border border-cyan-200 dark:border-cyan-500/20">{studentId}</code>
                   </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   {format(new Date(log.triggeredAt), 'MMM d, yyyy h:mm a')}

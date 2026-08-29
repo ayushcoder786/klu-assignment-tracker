@@ -68,12 +68,12 @@ export default function SyncLogs() {
               onClick={() => setFilter(f.key)}
               className={`flex-none flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer
                 ${filter === f.key
-                  ? 'bg-gradient-to-r from-cyan-600 to-slate-700 text-white shadow-md'
-                  : 'text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800'
+                  ? 'bg-gradient-to-r from-cyan-600 to-slate-700 text-white shadow-md border border-cyan-500/30'
+                  : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800'
                 }`}
             >
               {f.label}
-              <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${filter === f.key ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/8 text-slate-600 dark:text-slate-400'}`}>
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${filter === f.key ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
                 {counts[f.key]}
               </span>
             </button>
@@ -115,10 +115,10 @@ export default function SyncLogs() {
                 filtered.map(log => {
                   const { name, studentId } = formatStudentDisplay(log.studentName, log.studentId);
                   return (
-                    <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-850 transition-colors">
+                    <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
                       <td className="px-6 py-4">
                         <p className="text-sm font-semibold text-slate-900 dark:text-white">{name}</p>
-                        <code className="text-[10px] text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 px-1.5 py-0.5 rounded font-bold border border-cyan-200 dark:border-transparent">{studentId}</code>
+                        <code className="text-[10px] text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 px-1.5 py-0.5 rounded font-bold border border-cyan-200 dark:border-cyan-500/20">{studentId}</code>
                       </td>
                     <td className="px-6 py-4 hidden sm:table-cell text-xs text-slate-600 dark:text-slate-400">
                       {formatLocalDateTime(log.triggeredAt, 'MMM d, yyyy h:mm:ss a')}
@@ -126,7 +126,7 @@ export default function SyncLogs() {
                     <td className="px-6 py-4 hidden md:table-cell text-xs text-slate-600 dark:text-slate-400">
                       {log.completedAt
                         ? formatLocalTime(log.completedAt)
-                        : <span className="text-slate-400 dark:text-slate-600 italic">In progress</span>
+                        : <span className="text-slate-400 dark:text-slate-500 italic">In progress</span>
                       }
                     </td>
                     <td className="px-6 py-4">

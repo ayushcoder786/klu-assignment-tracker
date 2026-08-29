@@ -70,6 +70,11 @@ export const authService = {
         student.name = getCleanStudentName(student.name);
       }
       authService.persistUserSession(student);
+      try {
+        sessionStorage.setItem('klu_pending_auto_sync', 'true');
+      } catch {
+        // ignore storage errors
+      }
       return student;
     } catch (err: unknown) {
       if ((err as Error).name === 'AbortError') {
@@ -100,6 +105,9 @@ export const authService = {
     sessionStorage.removeItem(AUTH_TOKEN_KEY);
     sessionStorage.removeItem('klu_student_session');
     sessionStorage.removeItem('klu_admin_session');
+    try {
+      sessionStorage.removeItem('klu_pending_auto_sync');
+    } catch {}
   },
 
   // ── Token helpers ────────────────────────────────────────────────────────────

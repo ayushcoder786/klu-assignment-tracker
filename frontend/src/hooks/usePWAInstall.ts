@@ -9,6 +9,8 @@ export interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
 }
 
+const PWA_INSTALLED_STORAGE_KEY = 'klu_pwa_installed';
+
 // Module-level capture so early beforeinstallprompt events fired before React mounts are never lost
 let globalDeferredPrompt: BeforeInstallPromptEvent | null = null;
 let globalIsInstalled = false;
@@ -16,21 +18,6 @@ const listeners = new Set<() => void>();
 
 function notifyListeners() {
   listeners.forEach(fn => fn());
-}
-
-if (typeof window !== 'undefined') {
-  window.addEventListener('beforeinstallprompt', (e: Event) => {
-    // Prevent default mini-infobar from appearing on mobile
-    e.preventDefault();
-    globalDeferredPrompt = e as BeforeInstallPromptEvent;
-    notifyListeners();
-  });
-
-  window.addEventListener('appinstalled', () => {
-    globalDeferredPrompt = null;
-    globalIsInstalled = true;
-    notifyListeners();
-  });
 }
 
 function checkIsStandalone(): boolean {
@@ -42,16 +29,53 @@ function checkIsStandalone(): boolean {
   );
 }
 
+function checkIsPersistedInstalled(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (checkIsStandalone()) return true;
+  try {
+    return localStorage.getItem(PWA_INSTALLED_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
 function checkIsIOS(): boolean {
   if (typeof window === 'undefined') return false;
   const userAgent = window.navigator.userAgent.toLowerCase();
   return /iphone|ipad|ipod/.test(userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
 }
 
+if (typeof window !== 'undefined') {
+  globalIsInstalled = checkIsPersistedInstalled();
+
+  window.addEventListener('beforeinstallprompt', (e: Event) => {
+    // Prevent default mini-infobar from appearing on mobile
+    e.preventDefault();
+    globalDeferredPrompt = e as BeforeInstallPromptEvent;
+    // If browser triggered install prompt, app is installable
+    if (!checkIsStandalone()) {
+      globalIsInstalled = false;
+      try {
+        localStorage.removeItem(PWA_INSTALLED_STORAGE_KEY);
+      } catch {}
+    }
+    notifyListeners();
+  });
+
+  window.addEventListener('appinstalled', () => {
+    globalDeferredPrompt = null;
+    globalIsInstalled = true;
+    try {
+      localStorage.setItem(PWA_INSTALLED_STORAGE_KEY, 'true');
+    } catch {}
+    notifyListeners();
+  });
+}
+
 export function usePWAInstall() {
   const [promptEvent, setPromptEvent] = useState<BeforeInstallPromptEvent | null>(() => globalDeferredPrompt);
   const [isStandalone, setIsStandalone] = useState<boolean>(checkIsStandalone);
-  const [isInstalled, setIsInstalled] = useState<boolean>(() => globalIsInstalled || checkIsStandalone());
+  const [isInstalled, setIsInstalled] = useState<boolean>(() => globalIsInstalled || checkIsPersistedInstalled());
   const [isIOS] = useState<boolean>(checkIsIOS);
 
   useEffect(() => {
@@ -59,19 +83,41 @@ export function usePWAInstall() {
       setPromptEvent(globalDeferredPrompt);
       const standalone = checkIsStandalone();
       setIsStandalone(standalone);
-      if (globalIsInstalled || standalone) {
+      if (globalIsInstalled || standalone || checkIsPersistedInstalled()) {
         setIsInstalled(true);
+      } else {
+        setIsInstalled(false);
       }
     };
 
     listeners.add(updateState);
     updateState();
 
+    // Check modern Chromium getInstalledRelatedApps API
+    if (typeof navigator !== 'undefined' && 'getInstalledRelatedApps' in navigator) {
+      (navigator as unknown as { getInstalledRelatedApps: () => Promise<unknown[]> })
+        .getInstalledRelatedApps()
+        .then((apps) => {
+          if (apps && apps.length > 0) {
+            globalIsInstalled = true;
+            try {
+              localStorage.setItem(PWA_INSTALLED_STORAGE_KEY, 'true');
+            } catch {}
+            updateState();
+          }
+        })
+        .catch(() => {});
+    }
+
     // Listen for display mode changes (e.g. if launched in standalone after opening)
     const mediaQuery = window.matchMedia('(display-mode: standalone)');
     const handleMediaChange = (e: MediaQueryListEvent) => {
       setIsStandalone(e.matches);
       if (e.matches) {
+        globalIsInstalled = true;
+        try {
+          localStorage.setItem(PWA_INSTALLED_STORAGE_KEY, 'true');
+        } catch {}
         setIsInstalled(true);
       }
     };
@@ -103,6 +149,9 @@ export function usePWAInstall() {
       if (choiceResult.outcome === 'accepted') {
         globalDeferredPrompt = null;
         globalIsInstalled = true;
+        try {
+          localStorage.setItem(PWA_INSTALLED_STORAGE_KEY, 'true');
+        } catch {}
         setPromptEvent(null);
         setIsInstalled(true);
         notifyListeners();

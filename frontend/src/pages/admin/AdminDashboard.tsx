@@ -99,7 +99,7 @@ export default function AdminDashboard() {
               {recentLogs.map(log => {
                 const { name, studentId } = formatStudentDisplay(log.studentName, log.studentId);
                 return (
-                  <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-850 transition-colors">
+                  <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
                     <td className="px-6 py-3.5">
                       <p className="text-sm font-medium text-slate-900 dark:text-white">{name}</p>
                       <p className="text-xs text-slate-500 dark:text-slate-400">{studentId}</p>

@@ -6,6 +6,7 @@ import {
 } from 'react-icons/fi';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
+import { Switch } from '../../components/common/Switch';
 import { useAuth } from '../../context/AuthContext';
 import { useSync } from '../../context/SyncContext';
 import { authService } from '../../services/authService';
@@ -33,21 +34,31 @@ interface ToggleProps {
 
 function ToggleSetting({ id, label, description, checked, onChange, disabled }: ToggleProps) {
   return (
-    <div className={`flex items-center gap-4 py-4 border-b border-slate-200 dark:border-slate-800 last:border-0 ${disabled ? 'opacity-40' : ''}`}>
-      <div className="flex-1">
-        <p className="text-sm font-bold text-slate-900 dark:text-white">{label}</p>
-        <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-0.5">{description}</p>
+    <div
+      onClick={() => !disabled && onChange(!checked)}
+      className={`
+        flex items-center justify-between gap-4 py-3.5 px-2.5 -mx-2.5 rounded-2xl
+        border-b border-slate-200/80 dark:border-slate-800/80 last:border-0
+        hover:bg-slate-100/70 dark:hover:bg-white/[0.02]
+        transition-colors duration-150 cursor-pointer
+        ${disabled ? 'opacity-40 cursor-not-allowed hover:bg-transparent' : ''}
+      `}
+    >
+      <div className="flex-1 min-w-0 pr-3">
+        <label htmlFor={id} className="text-sm font-bold text-slate-900 dark:text-white cursor-pointer block leading-tight">
+          {label}
+        </label>
+        <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-1 leading-normal">
+          {description}
+        </p>
       </div>
-      <button
+      <Switch
         id={id}
+        checked={checked}
+        onChange={onChange}
         disabled={disabled}
-        onClick={() => !disabled && onChange(!checked)}
-        className={`relative w-11 h-6 rounded-full transition-colors duration-300 cursor-pointer ${checked ? 'bg-violet-600' : 'bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700'} disabled:cursor-not-allowed`}
-        aria-checked={checked}
-        role="switch"
-      >
-        <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-300 ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
-      </button>
+        label={label}
+      />
     </div>
   );
 }

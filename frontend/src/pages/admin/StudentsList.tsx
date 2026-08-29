@@ -83,13 +83,13 @@ export default function StudentsList() {
                 </tr>
               ) : (
                 filtered.map(s => (
-                  <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-850 transition-colors group">
+                  <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors group">
                     <td className="px-6 py-4">
-                      <code className="text-xs text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-200 dark:border-transparent font-bold">{s.studentId}</code>
+                      <code className="text-xs text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-200 dark:border-cyan-500/20 font-bold">{s.studentId}</code>
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm font-semibold text-slate-900 dark:text-white">{getCleanStudentName(s.name, s.studentId)}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{s.email}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{s.email}</p>
                     </td>
                     <td className="px-6 py-4">
                       <Badge status={s.status || 'active'} />

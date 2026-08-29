@@ -296,7 +296,7 @@ export default function ExamList() {
               return (
                 <div
                   key={exam.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 hover:bg-slate-50 dark:hover:bg-slate-850 dark:hover:bg-slate-800/60 transition-all duration-200 group"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all duration-200 group"
                 >
                   <div className="flex-1 min-w-0 pr-4">
                     <div className="flex items-center gap-2 mb-1.5 flex-wrap">

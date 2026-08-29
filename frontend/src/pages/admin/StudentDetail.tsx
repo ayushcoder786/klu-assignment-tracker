@@ -96,8 +96,8 @@ export default function StudentDetail() {
   if (notFound || !student) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
       <FiAlertCircle size={48} className="text-red-400" />
-      <p className="text-white font-semibold">Student not found</p>
-      <Link to="/admin/students" className="text-cyan-400 text-sm">← Back to students</Link>
+      <p className="text-slate-900 dark:text-white font-semibold">Student not found</p>
+      <Link to="/admin/students" className="text-cyan-600 dark:text-cyan-400 text-sm font-semibold">← Back to students</Link>
     </div>
   );
 
@@ -163,7 +163,7 @@ export default function StudentDetail() {
             <FiAward size={16} className="text-emerald-600 dark:text-emerald-400" />
             E-Exams & Tests Overview
           </h3>
-          <span className="text-xs font-semibold text-slate-500">
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
             {examSummary.total} total recorded
           </span>
         </div>
@@ -222,7 +222,7 @@ export default function StudentDetail() {
             <FiClock size={16} className="text-cyan-600 dark:text-cyan-400" />
             Assignment History
           </h3>
-          <span className="text-xs font-medium text-slate-500">
+          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
             {assignments.length} assignments recorded
           </span>
         </div>
@@ -230,7 +230,7 @@ export default function StudentDetail() {
         {assignments.length === 0 ? (
           <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
             <p>No assignments synchronized for this student yet.</p>
-            <p className="text-xs text-slate-400 mt-1">Click "Sync Now" to fetch live assignments from KLU Moodle.</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Click "Sync Now" to fetch live assignments from KLU Moodle.</p>
           </div>
         ) : (
           <div className="divide-y divide-slate-200 dark:divide-slate-800">

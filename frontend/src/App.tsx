@@ -21,11 +21,15 @@ import StudentsList from './pages/admin/StudentsList';
 import StudentDetail from './pages/admin/StudentDetail';
 import SyncStatus from './pages/admin/SyncStatus';
 import SyncLogs from './pages/admin/SyncLogs';
+import { LoadingSpinner } from './components/common/LoadingSpinner';
 
 // ─── Guards ───────────────────────────────────────────────────────────────────
 
 function StudentGuard({ children }: { children: React.ReactNode }) {
-  const { authState } = useAuth();
+  const { authState, initializing } = useAuth();
+  if (initializing) {
+    return <LoadingSpinner fullPage />;
+  }
   if (!authState.isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
@@ -33,7 +37,10 @@ function StudentGuard({ children }: { children: React.ReactNode }) {
 }
 
 function AdminGuard({ children }: { children: React.ReactNode }) {
-  const { authState } = useAuth();
+  const { authState, initializing } = useAuth();
+  if (initializing) {
+    return <LoadingSpinner fullPage />;
+  }
   if (!authState.isAuthenticated) {
     return <Navigate to="/login" replace />;
   }

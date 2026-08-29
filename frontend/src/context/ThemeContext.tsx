@@ -62,8 +62,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  }, [theme, setTheme]);
+    setThemeState(prev => {
+      const nextTheme: Theme = prev === 'dark' ? 'light' : 'dark';
+      try {
+        localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+      } catch {
+        // ignore storage errors
+      }
+      applyThemeToDOM(nextTheme);
+      return nextTheme;
+    });
+  }, []);
 
   // Initial apply & system preference listener
   useEffect(() => {

@@ -139,7 +139,7 @@ public class ExamControllerIntegrationTest {
         Exam e1 = Exam.builder().userId(testStudent.getId()).status(ExamStatus.GIVEN).build();
         Exam e2 = Exam.builder().userId(testStudent.getId()).status(ExamStatus.GIVEN).build();
         Exam e3 = Exam.builder().userId(testStudent.getId()).status(ExamStatus.PENDING).build();
-        Exam e4 = Exam.builder().userId(testStudent.getId()).status(ExamStatus.OVERDUE).build();
+        Exam e4 = Exam.builder().userId(testStudent.getId()).closeDate(Instant.now().minusSeconds(86400)).status(ExamStatus.OVERDUE).build();
         examRepository.saveAll(List.of(e1, e2, e3, e4));
 
         mockMvc.perform(get("/api/exams/summary")

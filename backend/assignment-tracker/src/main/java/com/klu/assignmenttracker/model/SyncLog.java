@@ -43,6 +43,10 @@ public class SyncLog {
     @Builder.Default
     private int assignmentsFound = 0;
 
+    /** How many exams/quizzes were found during this sync */
+    @Builder.Default
+    private int examsFound = 0;
+
     /** Error details if the sync failed */
     private String errorMessage;
 }

@@ -10,7 +10,6 @@ import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { adminService } from '../../services/adminService';
-import { mockAssignments } from '../../data/mockData';
 import type { Student } from '../../types/user';
 import type { Assignment } from '../../types/assignment';
 import type { Exam } from '../../types/exam';
@@ -22,6 +21,7 @@ export default function StudentDetail() {
   const { studentId } = useParams<{ studentId: string }>();
   const navigate = useNavigate();
   const [student, setStudent] = useState<Student | null>(null);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [studentExams, setStudentExams] = useState<Exam[]>([]);
   const [examSummary, setExamSummary] = useState<{ total: number; given: number; pending: number; overdue: number }>({
     total: 0,
@@ -43,11 +43,13 @@ export default function StudentDetail() {
         setNotFound(true);
       } else {
         setStudent(data);
-        const [exams, summary] = await Promise.all([
+        const [exams, summary, realAssignments] = await Promise.all([
           adminService.getStudentExams(data.id || studentId),
           adminService.getStudentExamSummary(data.id || studentId),
+          adminService.getStudentAssignments(data.id || studentId),
         ]);
         setStudentExams(exams || []);
+        setAssignments(realAssignments || []);
         if (summary) {
           setExamSummary(summary);
         } else if (exams && exams.length > 0) {
@@ -72,13 +74,15 @@ export default function StudentDetail() {
     try {
       const res = await adminService.triggerStudentSync(studentId);
       setSyncMsg({ success: true, text: res.message });
-      // Refresh exams
+      // Refresh exams and assignments
       if (student?.id) {
-        const [exams, summary] = await Promise.all([
+        const [exams, summary, realAssignments] = await Promise.all([
           adminService.getStudentExams(student.id),
           adminService.getStudentExamSummary(student.id),
+          adminService.getStudentAssignments(student.id),
         ]);
         setStudentExams(exams || []);
+        setAssignments(realAssignments || []);
         if (summary) setExamSummary(summary);
       }
     } catch (e: unknown) {
@@ -97,7 +101,6 @@ export default function StudentDetail() {
     </div>
   );
 
-  const assignments: Assignment[] = mockAssignments.slice(0, 8);
   const displayName = getCleanStudentName(student.name, student.studentId);
 
   return (
@@ -214,21 +217,39 @@ export default function StudentDetail() {
 
       {/* Assignment history */}
       <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-4">Assignment History</h3>
-        <div className="divide-y divide-slate-200 dark:divide-white/5">
-          {assignments.map(a => (
-            <div key={a.id} className="flex flex-col sm:flex-row sm:items-center gap-2 py-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{a.title || a.name}</p>
-                <p className="text-xs text-slate-500">{a.courseName || a.course?.name} · Due {a.dueDate ? format(new Date(a.dueDate), 'MMM d') : '—'}</p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <CountdownChip dueDate={a.dueDate} status={a.status} />
-                <Badge status={a.status} />
-              </div>
-            </div>
-          ))}
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <FiClock size={16} className="text-cyan-600 dark:text-cyan-400" />
+            Assignment History
+          </h3>
+          <span className="text-xs font-medium text-slate-500">
+            {assignments.length} assignments recorded
+          </span>
         </div>
+
+        {assignments.length === 0 ? (
+          <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
+            <p>No assignments synchronized for this student yet.</p>
+            <p className="text-xs text-slate-400 mt-1">Click "Sync Now" to fetch live assignments from KLU Moodle.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-200 dark:divide-slate-800">
+            {assignments.map(a => (
+              <div key={a.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{a.title || a.name || 'Untitled Assignment'}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    {a.courseName || a.course?.name || 'General'} · Due {a.dueDate ? formatLocalDateTime(a.dueDate, 'MMM d, yyyy h:mm a') : 'No deadline'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <CountdownChip dueDate={a.dueDate} status={a.status} />
+                  <Badge status={a.status} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </Card>
     </div>
   );

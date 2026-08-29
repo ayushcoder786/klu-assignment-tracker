@@ -94,10 +94,10 @@ export default function ExamList() {
           return normalizedStatus === 'given' || normalizedStatus === 'completed';
         }
         if (activeSection === 'overdue') {
-          return normalizedStatus === 'overdue' || (close ? isPast(close) && normalizedStatus !== 'given' && normalizedStatus !== 'completed' : false);
+          return (normalizedStatus === 'overdue' || (close ? isPast(close) : false)) && normalizedStatus !== 'given' && normalizedStatus !== 'completed';
         }
         if (activeSection === 'pending') {
-          return normalizedStatus === 'pending' && (!close || !isPast(close));
+          return (normalizedStatus === 'pending' || normalizedStatus === 'upcoming') && (!close || !isPast(close));
         }
 
         return true;
@@ -308,6 +308,11 @@ export default function ExamList() {
                           <FiClock size={11} /> {Math.round(exam.timeLimit / 60)} mins
                         </span>
                       )}
+                      {exam.attemptsCount != null && exam.attemptsCount > 0 && (
+                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md flex items-center gap-1 border border-slate-200 dark:border-slate-700">
+                          {exam.attemptsCount} attempt{exam.attemptsCount > 1 ? 's' : ''}
+                        </span>
+                      )}
                       {isGiven && exam.obtainedGrade != null && (
                         <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/90 border border-emerald-300 dark:border-emerald-500/40 px-2 py-0.5 rounded-md">
                           Score: {exam.obtainedGrade} {exam.maxGrade ? `/ ${exam.maxGrade}` : ''}
@@ -349,7 +354,7 @@ export default function ExamList() {
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all cursor-pointer"
                         title="Open directly on KLU Moodle"
                       >
-                        <span>{isGiven ? 'View' : 'Attempt'}</span>
+                        <span>{isGiven ? 'Review on LMS' : 'Take Exam'}</span>
                         <FiExternalLink size={12} />
                       </a>
                     ) : (

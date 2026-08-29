@@ -8,20 +8,45 @@ interface AuthContextValue {
   studentLogin: (studentId: string, lmsPassword: string) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
+  initializing: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [authState, setAuthState] = useState<AuthState>({
-    isAuthenticated: false, user: null, role: null,
-  });
+  // Synchronously initialize state from persistent localStorage so it is available on first render
+  const [authState, setAuthState] = useState<AuthState>(() => authService.getStoredSession());
   const [loading, setLoading] = useState(false);
+  const [initializing, setInitializing] = useState(true);
 
-  // Restore session on mount
+  // Validate / restore session with backend on app startup
   useEffect(() => {
-    const stored = authService.getStoredSession();
-    if (stored.isAuthenticated) setAuthState(stored);
+    let mounted = true;
+    (async () => {
+      try {
+        const stored = authService.getStoredSession();
+        if (stored.isAuthenticated) {
+          const validated = await authService.validateCurrentSession();
+          if (mounted) {
+            setAuthState(validated);
+          }
+        } else {
+          if (mounted) {
+            setAuthState({ isAuthenticated: false, user: null, role: null });
+          }
+        }
+      } catch (err) {
+        console.warn('Error verifying session on startup:', err);
+      } finally {
+        if (mounted) {
+          setInitializing(false);
+        }
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const login = async (studentId: string, lmsPassword: string) => {
@@ -48,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ authState, login, studentLogin, logout, loading }}>
+    <AuthContext.Provider value={{ authState, login, studentLogin, logout, loading, initializing }}>
       {children}
     </AuthContext.Provider>
   );

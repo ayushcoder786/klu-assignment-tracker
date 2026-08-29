@@ -9,14 +9,17 @@ interface ThemeToggleProps {
 export function ThemeToggle({ className = '' }: ThemeToggleProps) {
   const { isDark, toggleTheme } = useTheme();
 
-  const title = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+  const label = isDark ? 'Switch to light mode' : 'Switch to dark mode';
 
   return (
     <button
       type="button"
-      onClick={toggleTheme}
-      aria-label={title}
-      title={title}
+      onClick={(e) => {
+        e.stopPropagation();
+        toggleTheme();
+      }}
+      aria-label={label}
+      title={label}
       className={`
         relative flex items-center justify-center
         w-9 h-9 sm:w-10 sm:h-10 rounded-xl
@@ -24,13 +27,13 @@ export function ThemeToggle({ className = '' }: ThemeToggleProps) {
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2
         ${
           isDark
-            ? 'bg-slate-900 hover:bg-slate-800 border border-slate-700 text-amber-400 hover:text-amber-300 shadow-md shadow-black/20 focus-visible:ring-offset-[#090d1a]'
-            : 'bg-slate-100 hover:bg-slate-200 border border-slate-300 text-indigo-600 hover:text-indigo-700 shadow-sm focus-visible:ring-offset-white'
+            ? 'bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-amber-400 hover:text-amber-300 shadow-md shadow-black/30 focus-visible:ring-offset-[#090d1a]'
+            : 'bg-white hover:bg-slate-100 border border-slate-200/90 text-indigo-600 hover:text-indigo-700 shadow-xs hover:shadow-sm focus-visible:ring-offset-white'
         }
         ${className}
       `}
     >
-      <div className="relative w-5 h-5 flex items-center justify-center overflow-hidden">
+      <div className="relative w-5 h-5 flex items-center justify-center overflow-hidden pointer-events-none">
         {/* Sun Icon for Dark Mode */}
         <FiSun
           size={18}

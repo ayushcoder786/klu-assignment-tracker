@@ -1,10 +1,12 @@
 package com.klu.assignmenttracker.controller;
 
+import com.klu.assignmenttracker.dto.AssignmentResponse;
 import com.klu.assignmenttracker.dto.ExamResponse;
 import com.klu.assignmenttracker.dto.ExamSummaryResponse;
 import com.klu.assignmenttracker.dto.SyncLogResponse;
 import com.klu.assignmenttracker.dto.SyncResponse;
 import com.klu.assignmenttracker.dto.UserResponse;
+import com.klu.assignmenttracker.service.AssignmentService;
 import com.klu.assignmenttracker.service.ExamService;
 import com.klu.assignmenttracker.service.SyncService;
 import com.klu.assignmenttracker.service.UserService;
@@ -30,11 +32,16 @@ public class AdminController {
     private final UserService userService;
     private final SyncService syncService;
     private final ExamService examService;
+    private final AssignmentService assignmentService;
 
-    public AdminController(UserService userService, SyncService syncService, ExamService examService) {
+    public AdminController(UserService userService,
+                           SyncService syncService,
+                           ExamService examService,
+                           AssignmentService assignmentService) {
         this.userService = userService;
         this.syncService = syncService;
         this.examService = examService;
+        this.assignmentService = assignmentService;
     }
 
     /**
@@ -75,6 +82,15 @@ public class AdminController {
     }
 
     /**
+     * GET /api/admin/users/{id}/assignments
+     * Get all assignments for a specific user (admin only).
+     */
+    @GetMapping("/users/{id}/assignments")
+    public ResponseEntity<List<AssignmentResponse>> getUserAssignments(@PathVariable String id) {
+        return ResponseEntity.ok(assignmentService.getAssignmentsByUserIdOrStudentId(id));
+    }
+
+    /**
      * GET /api/admin/users/{id}/exams
      * Get all exams for a specific user (admin only).
      */
@@ -92,3 +108,4 @@ public class AdminController {
         return ResponseEntity.ok(examService.getExamSummaryByUserId(id));
     }
 }
+

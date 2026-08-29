@@ -2,7 +2,9 @@ package com.klu.assignmenttracker.service;
 
 import com.klu.assignmenttracker.dto.AssignmentResponse;
 import com.klu.assignmenttracker.exception.ResourceNotFoundException;
+import com.klu.assignmenttracker.model.User;
 import com.klu.assignmenttracker.repository.AssignmentRepository;
+import com.klu.assignmenttracker.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,19 +18,40 @@ import java.util.stream.Collectors;
 public class AssignmentService {
 
     private final AssignmentRepository assignmentRepository;
+    private final UserRepository userRepository;
 
-    public AssignmentService(AssignmentRepository assignmentRepository) {
+    public AssignmentService(AssignmentRepository assignmentRepository, UserRepository userRepository) {
         this.assignmentRepository = assignmentRepository;
+        this.userRepository = userRepository;
     }
 
     /**
-     * Get all assignments for a specific user.
+     * Get all assignments for a specific user ID.
      * Always filters by userId - students cannot see other students' assignments.
      *
      * @param userId the authenticated user's ID
      * @return list of the user's assignments
      */
     public List<AssignmentResponse> getAssignmentsByUserId(String userId) {
+        return assignmentRepository.findByUserId(userId)
+                .stream()
+                .map(AssignmentResponse::fromAssignment)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get all assignments for a user by user ID or student ID (for admin portal).
+     *
+     * @param idOrStudentId user ID or student ID
+     * @return list of assignments for the specified user
+     */
+    public List<AssignmentResponse> getAssignmentsByUserIdOrStudentId(String idOrStudentId) {
+        String userId = userRepository.findById(idOrStudentId)
+                .or(() -> userRepository.findByStudentId(idOrStudentId))
+                .or(() -> userRepository.findByEmail(idOrStudentId))
+                .map(User::getId)
+                .orElse(idOrStudentId);
+
         return assignmentRepository.findByUserId(userId)
                 .stream()
                 .map(AssignmentResponse::fromAssignment)
@@ -51,3 +74,4 @@ public class AssignmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Assignment", "id", id));
     }
 }
+

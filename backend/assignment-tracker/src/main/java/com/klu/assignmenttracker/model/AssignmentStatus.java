@@ -6,6 +6,8 @@ package com.klu.assignmenttracker.model;
 public enum AssignmentStatus {
     /** Assignment is open and not yet submitted */
     PENDING,
+    /** Assignment has a future start/availability date and is not yet open */
+    UPCOMING,
     /** Assignment has been submitted */
     SUBMITTED,
     /** Assignment deadline has passed without submission */
@@ -13,3 +15,4 @@ public enum AssignmentStatus {
     /** Assignment has been graded */
     GRADED
 }
+

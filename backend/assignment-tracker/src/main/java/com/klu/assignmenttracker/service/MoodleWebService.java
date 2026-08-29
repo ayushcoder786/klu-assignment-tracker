@@ -7,6 +7,7 @@ import com.klu.assignmenttracker.dto.moodle.MoodleAssignmentsResponse;
 import com.klu.assignmenttracker.dto.moodle.MoodleCourse;
 import com.klu.assignmenttracker.dto.moodle.MoodleQuizAttemptsResponse;
 import com.klu.assignmenttracker.dto.moodle.MoodleQuizBestGradeResponse;
+import com.klu.assignmenttracker.dto.moodle.MoodleQuizItem;
 import com.klu.assignmenttracker.dto.moodle.MoodleQuizzesResponse;
 import com.klu.assignmenttracker.dto.moodle.MoodleSiteInfo;
 import com.klu.assignmenttracker.dto.moodle.MoodleSubmissionStatusResponse;
@@ -27,7 +28,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.StringJoiner;
 
 /**
@@ -153,6 +156,10 @@ public class MoodleWebService {
 
     /**
      * Get all quizzes/e-exams for the specified course IDs.
+     * Uses a resilient multi-strategy approach:
+     * 1. mod_quiz_get_quizzes_by_courses (batch + course-by-course fallback)
+     * 2. core_course_get_contents (scans course sections for all activities of module type 'quiz')
+     * Results are deduplicated and merged by Moodle quiz ID.
      *
      * @param moodleToken active Moodle Web Service token
      * @param courseIds   list of Moodle course IDs
@@ -163,40 +170,201 @@ public class MoodleWebService {
             return MoodleQuizzesResponse.builder().quizzes(Collections.emptyList()).build();
         }
 
-        List<ParamEntry> params = new ArrayList<>();
-        for (int i = 0; i < courseIds.size(); i++) {
-            params.add(new ParamEntry("courseids[" + i + "]", String.valueOf(courseIds.get(i))));
+        Map<Long, MoodleQuizItem> quizMap = new LinkedHashMap<>();
+
+        // 1. Try batch call for all courses via mod_quiz_get_quizzes_by_courses
+        try {
+            List<ParamEntry> params = new ArrayList<>();
+            for (int i = 0; i < courseIds.size(); i++) {
+                params.add(new ParamEntry("courseids[" + i + "]", String.valueOf(courseIds.get(i))));
+            }
+            String responseBody = executeCall(moodleToken, "mod_quiz_get_quizzes_by_courses", params);
+            MoodleQuizzesResponse batchResp = objectMapper.readValue(responseBody, MoodleQuizzesResponse.class);
+            if (batchResp != null && batchResp.getQuizzes() != null) {
+                for (MoodleQuizItem q : batchResp.getQuizzes()) {
+                    if (q != null && q.getId() != null) {
+                        quizMap.put(q.getId(), q);
+                    }
+                }
+                log.info("Batch mod_quiz_get_quizzes_by_courses returned {} quizzes across {} courses",
+                        quizMap.size(), courseIds.size());
+            }
+        } catch (Exception batchEx) {
+            log.warn("Batch quiz retrieval for {} courses encountered issue ({}), falling back to individual course retrieval: {}",
+                    courseIds.size(), batchEx.getClass().getSimpleName(), batchEx.getMessage());
         }
 
+        // 2. Individual course retrieval via mod_quiz_get_quizzes_by_courses (if batch returned nothing or failed)
+        if (quizMap.isEmpty()) {
+            for (Long courseId : courseIds) {
+                if (courseId == null || courseId <= 1) {
+                    continue;
+                }
+                try {
+                    List<ParamEntry> singleParam = List.of(new ParamEntry("courseids[0]", String.valueOf(courseId)));
+                    String responseBody = executeCall(moodleToken, "mod_quiz_get_quizzes_by_courses", singleParam);
+                    MoodleQuizzesResponse singleResp = objectMapper.readValue(responseBody, MoodleQuizzesResponse.class);
+                    if (singleResp != null && singleResp.getQuizzes() != null) {
+                        for (MoodleQuizItem q : singleResp.getQuizzes()) {
+                            if (q != null && q.getId() != null) {
+                                quizMap.put(q.getId(), q);
+                            }
+                        }
+                    }
+                } catch (Exception courseEx) {
+                    log.warn("Could not retrieve mod_quiz quizzes for courseId={}: {}", courseId, courseEx.getMessage());
+                }
+            }
+        }
+
+        // 3. Extract and merge quiz activities from core_course_get_contents for every enrolled course
+        for (Long courseId : courseIds) {
+            if (courseId == null || courseId <= 1) {
+                continue;
+            }
+            try {
+                List<MoodleQuizItem> contentQuizzes = getQuizzesFromCourseContents(moodleToken, courseId);
+                for (MoodleQuizItem cq : contentQuizzes) {
+                    if (cq == null || cq.getId() == null) {
+                        continue;
+                    }
+                    if (quizMap.containsKey(cq.getId())) {
+                        MoodleQuizItem existing = quizMap.get(cq.getId());
+                        // Enrich missing fields
+                        if ((existing.getCoursemodule() == null || existing.getCoursemodule() <= 0) && cq.getCoursemodule() != null) {
+                            existing.setCoursemodule(cq.getCoursemodule());
+                        }
+                        if ((existing.getTimeopen() == null || existing.getTimeopen() <= 0) && cq.getTimeopen() != null) {
+                            existing.setTimeopen(cq.getTimeopen());
+                        }
+                        if ((existing.getTimeclose() == null || existing.getTimeclose() <= 0) && cq.getTimeclose() != null) {
+                            existing.setTimeclose(cq.getTimeclose());
+                        }
+                        if ((existing.getIntro() == null || existing.getIntro().isBlank()) && cq.getIntro() != null) {
+                            existing.setIntro(cq.getIntro());
+                        }
+                    } else {
+                        quizMap.put(cq.getId(), cq);
+                    }
+                }
+            } catch (Exception contentEx) {
+                log.warn("Could not extract quizzes from course contents for courseId={}: {}", courseId, contentEx.getMessage());
+            }
+        }
+
+        log.info("Comprehensive quiz sync completed with {} total unique quizzes across {} courses",
+                quizMap.size(), courseIds.size());
+        return MoodleQuizzesResponse.builder().quizzes(new ArrayList<>(quizMap.values())).build();
+    }
+
+    /**
+     * Get all quiz activities from course section contents via {@code core_course_get_contents}.
+     *
+     * @param moodleToken active Moodle Web Service token
+     * @param courseId    Moodle course ID
+     * @return list of discovered MoodleQuizItems
+     */
+    public List<MoodleQuizItem> getQuizzesFromCourseContents(String moodleToken, long courseId) {
+        List<ParamEntry> params = List.of(new ParamEntry("courseid", String.valueOf(courseId)));
         try {
-            String responseBody = executeCall(moodleToken, "mod_quiz_get_quizzes_by_courses", params);
-            return objectMapper.readValue(responseBody, MoodleQuizzesResponse.class);
+            String responseBody = executeCall(moodleToken, "core_course_get_contents", params);
+            JsonNode sections = objectMapper.readTree(responseBody);
+            if (!sections.isArray()) {
+                return Collections.emptyList();
+            }
+
+            List<MoodleQuizItem> quizItems = new ArrayList<>();
+            for (JsonNode section : sections) {
+                JsonNode modules = section.path("modules");
+                if (!modules.isArray()) {
+                    continue;
+                }
+                for (JsonNode mod : modules) {
+                    String modname = mod.path("modname").asText("");
+                    String url = mod.path("url").asText("");
+                    if ("quiz".equalsIgnoreCase(modname) || url.contains("/mod/quiz/")) {
+                        long cmid = mod.path("id").asLong(0L);
+                        long instanceId = mod.path("instance").asLong(0L);
+                        long quizId = instanceId > 0 ? instanceId : cmid;
+                        if (quizId <= 0) {
+                            continue;
+                        }
+
+                        String name = mod.path("name").asText("Untitled Quiz");
+                        String intro = mod.path("description").asText("");
+
+                        Long timeopen = null;
+                        Long timeclose = null;
+
+                        JsonNode dates = mod.path("dates");
+                        if (dates.isArray()) {
+                            for (JsonNode d : dates) {
+                                String label = d.path("label").asText("").toLowerCase();
+                                long ts = d.path("timestamp").asLong(0L);
+                                if (ts > 0) {
+                                    if (label.contains("open") || label.contains("from") || label.contains("start")) {
+                                        timeopen = ts;
+                                    } else if (label.contains("close") || label.contains("due") || label.contains("until") || label.contains("end")) {
+                                        timeclose = ts;
+                                    }
+                                }
+                            }
+                        }
+
+                        MoodleQuizItem item = MoodleQuizItem.builder()
+                                .id(quizId)
+                                .course(courseId)
+                                .coursemodule(cmid > 0 ? cmid : null)
+                                .name(name)
+                                .intro(intro)
+                                .timeopen(timeopen)
+                                .timeclose(timeclose)
+                                .visible(mod.path("visible").asInt(1))
+                                .build();
+
+                        quizItems.add(item);
+                    }
+                }
+            }
+            log.debug("Course ID {} course contents returned {} quiz activities", courseId, quizItems.size());
+            return quizItems;
         } catch (Exception e) {
-            log.warn("Could not retrieve quizzes from Moodle: {}", e.getMessage());
-            return MoodleQuizzesResponse.builder().quizzes(Collections.emptyList()).build();
+            log.warn("Could not retrieve course contents for courseId={}: {}", courseId, e.getMessage());
+            return Collections.emptyList();
         }
     }
 
     /**
-     * Get user attempts for a specific quiz/e-exam to determine completion and score.
+     * Get user attempts for a specific quiz/e-exam for the given Moodle user ID.
      *
      * @param moodleToken active Moodle Web Service token
      * @param quizId      the Moodle quiz ID
+     * @param userId      the Moodle user ID
      * @return user attempts details
      */
-    public MoodleQuizAttemptsResponse getQuizUserAttempts(String moodleToken, long quizId) {
-        List<ParamEntry> params = List.of(
-                new ParamEntry("quizid", String.valueOf(quizId)),
-                new ParamEntry("status", "all"),
-                new ParamEntry("includepreviews", "0")
-        );
+    public MoodleQuizAttemptsResponse getQuizUserAttempts(String moodleToken, long quizId, long userId) {
+        List<ParamEntry> params = new ArrayList<>();
+        params.add(new ParamEntry("quizid", String.valueOf(quizId)));
+        if (userId > 0) {
+            params.add(new ParamEntry("userid", String.valueOf(userId)));
+        }
+        params.add(new ParamEntry("status", "all"));
+        params.add(new ParamEntry("includepreviews", "0"));
+
         try {
             String responseBody = executeCall(moodleToken, "mod_quiz_get_user_attempts", params);
             return objectMapper.readValue(responseBody, MoodleQuizAttemptsResponse.class);
         } catch (Exception e) {
-            log.warn("Could not retrieve user attempts for quizId={}: {}", quizId, e.getMessage());
+            log.debug("Could not retrieve user attempts for quizId={}, userId={}: {}", quizId, userId, e.getMessage());
             return null;
         }
+    }
+
+    /**
+     * Overloaded method for backward compatibility.
+     */
+    public MoodleQuizAttemptsResponse getQuizUserAttempts(String moodleToken, long quizId) {
+        return getQuizUserAttempts(moodleToken, quizId, 0L);
     }
 
     /**
@@ -303,5 +471,21 @@ public class MoodleWebService {
         }
     }
 
-    private record ParamEntry(String key, String value) {}
+    private static class ParamEntry {
+        private final String key;
+        private final String value;
+
+        public ParamEntry(String key, String value) {
+            this.key = key;
+            this.value = value;
+        }
+
+        public String key() {
+            return key;
+        }
+
+        public String value() {
+            return value;
+        }
+    }
 }

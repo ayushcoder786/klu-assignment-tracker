@@ -27,6 +27,7 @@ public class SyncLogResponse {
     private Instant completedAt;
     private SyncStatus status;
     private int assignmentsFound;
+    private int examsFound;
     private String errorMessage;
 
     /** Convert a SyncLog model and User model to a SyncLogResponse DTO */
@@ -51,6 +52,7 @@ public class SyncLogResponse {
                 .completedAt(syncLog.getCompletedAt())
                 .status(syncLog.getStatus())
                 .assignmentsFound(syncLog.getAssignmentsFound())
+                .examsFound(syncLog.getExamsFound())
                 .errorMessage(syncLog.getErrorMessage())
                 .build();
     }

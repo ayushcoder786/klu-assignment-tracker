@@ -8,10 +8,18 @@ interface CountdownChipProps {
 export function CountdownChip({ dueDate, status }: CountdownChipProps) {
   const normalized = (status || '').toLowerCase();
 
-  if (normalized === 'submitted' || normalized === 'graded') {
+  if (normalized === 'submitted' || normalized === 'graded' || normalized === 'completed' || normalized === 'given') {
     return (
       <span className="inline-flex items-center text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-300 dark:text-emerald-300 dark:bg-emerald-950/70 dark:border-emerald-500/40 px-2.5 py-0.5 rounded-full">
         Completed
+      </span>
+    );
+  }
+
+  if (normalized === 'upcoming') {
+    return (
+      <span className="inline-flex items-center text-xs font-semibold text-violet-800 bg-violet-50 border border-violet-300 dark:text-violet-300 dark:bg-violet-950/70 dark:border-violet-500/40 px-2.5 py-0.5 rounded-full">
+        Upcoming
       </span>
     );
   }
@@ -27,9 +35,9 @@ export function CountdownChip({ dueDate, status }: CountdownChipProps) {
   const due = typeof dueDate === 'string' ? parseISO(dueDate) : new Date(dueDate);
   const now = new Date();
 
-  if (isPast(due) || normalized === 'overdue') {
+  if (normalized === 'overdue' || isPast(due)) {
     const days = Math.abs(differenceInDays(now, due));
-    const label = days === 0 ? 'Due today' : `${days}d overdue`;
+    const label = days === 0 ? 'Overdue today' : `${days}d overdue`;
     return (
       <span className="inline-flex items-center text-xs font-semibold text-red-800 bg-red-50 border border-red-300 dark:text-red-300 dark:bg-red-950/70 dark:border-red-500/40 px-2.5 py-0.5 rounded-full">
         {label}
@@ -46,10 +54,13 @@ export function CountdownChip({ dueDate, status }: CountdownChipProps) {
   let colorClass = '';
 
   if (totalSeconds < 3600) {
-    label = `${mins}m left`;
+    label = `${Math.max(1, mins)}m left`;
     colorClass = 'text-red-800 bg-red-50 border-red-300 dark:text-red-300 dark:bg-red-950/80 dark:border-red-500/50 font-bold animate-pulse';
   } else if (totalSeconds < 86400) {
     label = `${hours}h ${mins}m left`;
+    colorClass = 'text-amber-800 bg-amber-50 border-amber-300 dark:text-amber-300 dark:bg-amber-950/70 dark:border-amber-500/40 font-semibold';
+  } else if (days === 0) {
+    label = 'Due today';
     colorClass = 'text-amber-800 bg-amber-50 border-amber-300 dark:text-amber-300 dark:bg-amber-950/70 dark:border-amber-500/40 font-semibold';
   } else if (days <= 3) {
     label = `${days}d ${hours}h left`;

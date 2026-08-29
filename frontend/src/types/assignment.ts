@@ -6,6 +6,7 @@ export type AssignmentStatus =
   | 'graded'
   | 'draft'
   | 'PENDING'
+  | 'UPCOMING'
   | 'SUBMITTED'
   | 'OVERDUE'
   | 'GRADED';
@@ -30,6 +31,7 @@ export interface Assignment {
   title?: string;
   name?: string;
   description?: string;
+  startDate?: string | null;
   dueDate?: string | null;
   cutoffDate?: string | null;
   status: AssignmentStatus;

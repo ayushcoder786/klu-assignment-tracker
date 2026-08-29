@@ -156,7 +156,7 @@ export default function StudentDashboard() {
     return exams
       .filter(e => {
         const st = (e.status || 'PENDING').toLowerCase();
-        return st === 'pending';
+        return st === 'pending' || st === 'upcoming';
       })
       .sort((a, b) => {
         const timeA = a.closeDate ? new Date(a.closeDate).getTime() : Infinity;

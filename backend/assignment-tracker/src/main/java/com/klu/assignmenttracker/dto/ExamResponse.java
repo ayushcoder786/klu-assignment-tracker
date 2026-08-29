@@ -39,8 +39,12 @@ public class ExamResponse {
     private Instant firstSeen;
     private Instant lastChecked;
 
-    /** Convert an Exam model to an ExamResponse DTO */
+    /** Convert an Exam model to an ExamResponse DTO with dynamically calculated authoritative status */
     public static ExamResponse fromExam(Exam exam) {
+        if (exam == null) {
+            return null;
+        }
+        ExamStatus effectiveStatus = calculateEffectiveStatus(exam);
         return ExamResponse.builder()
                 .id(exam.getId())
                 .userId(exam.getUserId())
@@ -58,10 +62,49 @@ public class ExamResponse {
                 .maxGrade(exam.getMaxGrade())
                 .obtainedGrade(exam.getObtainedGrade())
                 .lmsUrl(exam.getLmsUrl())
-                .status(exam.getStatus())
+                .status(effectiveStatus)
                 .completedAt(exam.getCompletedAt())
                 .firstSeen(exam.getFirstSeen())
                 .lastChecked(exam.getLastChecked())
                 .build();
+    }
+
+    /**
+     * Authoritative Exam Status Rules:
+     * 1. GIVEN: Student has completed at least 1 attempt or has an obtained grade
+     * 2. UPCOMING: Start/open date is in the future (now < openDate)
+     * 3. PENDING: No deadline OR deadline is in the future (now <= closeDate)
+     * 4. OVERDUE: Deadline has passed (now > closeDate) and not completed
+     */
+    public static ExamStatus calculateEffectiveStatus(Exam exam) {
+        if (exam == null) {
+            return ExamStatus.PENDING;
+        }
+        ExamStatus status = exam.getStatus();
+        if (status == ExamStatus.GIVEN) {
+            return ExamStatus.GIVEN;
+        }
+        if (exam.getAttemptsCount() != null && exam.getAttemptsCount() > 0 && exam.getCompletedAt() != null) {
+            return ExamStatus.GIVEN;
+        }
+        if (exam.getObtainedGrade() != null) {
+            return ExamStatus.GIVEN;
+        }
+
+        Instant now = Instant.now();
+
+        if (exam.getOpenDate() != null && exam.getOpenDate().isAfter(now)) {
+            return ExamStatus.UPCOMING;
+        }
+
+        if (exam.getCloseDate() == null) {
+            return ExamStatus.PENDING;
+        }
+
+        if (exam.getCloseDate().isBefore(now)) {
+            return ExamStatus.OVERDUE;
+        }
+
+        return ExamStatus.PENDING;
     }
 }

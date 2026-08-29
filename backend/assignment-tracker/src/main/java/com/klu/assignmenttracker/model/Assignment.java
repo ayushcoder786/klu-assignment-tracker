@@ -42,6 +42,9 @@ public class Assignment {
     /** Full description / instructions for the assignment */
     private String description;
 
+    /** Start/availability date: when submissions open (UTC) */
+    private Instant startDate;
+
     /** Deadline: when the assignment is due (UTC) */
     private Instant dueDate;
 

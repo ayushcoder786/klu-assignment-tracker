@@ -1,5 +1,6 @@
 import type { Student } from '../types/user';
 import type { SyncLog, GlobalSyncStatus } from '../types/sync';
+import type { Assignment } from '../types/assignment';
 import { API_BASE } from './apiConfig';
 import { authService } from './authService';
 import { isTestStudent, formatStudentDisplay } from '../utils/userUtils';
@@ -138,6 +139,27 @@ export const adminService = {
    */
   async triggerGlobalSync(): Promise<{ success: boolean; message: string }> {
     return { success: true, message: 'Global sync initiated for all registered students.' };
+  },
+
+  /**
+   * Get assignments for a specific student (admin only).
+   * GET /api/admin/users/:id/assignments
+   */
+  async getStudentAssignments(userIdOrStudentId: string): Promise<Assignment[]> {
+    try {
+      const res = await fetch(`${API_BASE}/admin/users/${userIdOrStudentId}/assignments`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...authService.authHeaders(),
+        },
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {
+      // return empty on error
+    }
+    return [];
   },
 
   /**

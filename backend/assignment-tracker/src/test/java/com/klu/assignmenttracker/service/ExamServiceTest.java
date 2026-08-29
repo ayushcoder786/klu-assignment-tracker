@@ -26,29 +26,32 @@ class ExamServiceTest {
     @Mock
     private ExamRepository examRepository;
 
+    @Mock
+    private com.klu.assignmenttracker.repository.UserRepository userRepository;
+
     private ExamService examService;
 
     @BeforeEach
     void setUp() {
-        examService = new ExamService(examRepository);
+        examService = new ExamService(examRepository, userRepository);
     }
 
     @Test
-    @DisplayName("calculateSummary correctly computes total, given, pending, and overdue counts")
+    @DisplayName("calculateSummary correctly computes total, given, pending (including upcoming), and overdue counts")
     void testCalculateSummary() {
         Exam e1 = Exam.builder().id("1").status(ExamStatus.GIVEN).build();
         Exam e2 = Exam.builder().id("2").status(ExamStatus.GIVEN).build();
         Exam e3 = Exam.builder().id("3").status(ExamStatus.GIVEN).build();
         Exam e4 = Exam.builder().id("4").status(ExamStatus.PENDING).build();
-        Exam e5 = Exam.builder().id("5").status(ExamStatus.PENDING).build();
-        Exam e6 = Exam.builder().id("6").status(ExamStatus.OVERDUE).build();
+        Exam e5 = Exam.builder().id("5").openDate(Instant.now().plusSeconds(86400)).status(ExamStatus.UPCOMING).build();
+        Exam e6 = Exam.builder().id("6").closeDate(Instant.now().minusSeconds(86400)).status(ExamStatus.OVERDUE).build();
 
         ExamSummaryResponse summary = examService.calculateSummary(List.of(e1, e2, e3, e4, e5, e6));
 
         assertNotNull(summary);
         assertEquals(6, summary.getTotal(), "Total exams should be 6");
         assertEquals(3, summary.getGiven(), "Given exams should be 3");
-        assertEquals(2, summary.getPending(), "Pending exams should be 2");
+        assertEquals(2, summary.getPending(), "Pending exams (including upcoming) should be 2");
         assertEquals(1, summary.getOverdue(), "Overdue exams should be 1");
     }
 
@@ -121,5 +124,55 @@ class ExamServiceTest {
 
         assertThrows(ResourceNotFoundException.class, () ->
                 examService.getExamByIdAndUserId("exam-99", "student-123"));
+    }
+
+    @Test
+    @DisplayName("calculateEffectiveStatus: future open date is UPCOMING")
+    void testCalculateEffectiveStatus_Upcoming() {
+        Exam exam = Exam.builder()
+                .openDate(Instant.now().plusSeconds(86400))
+                .closeDate(Instant.now().plusSeconds(86400 * 5))
+                .status(ExamStatus.PENDING)
+                .build();
+
+        assertEquals(ExamStatus.UPCOMING, ExamResponse.calculateEffectiveStatus(exam));
+    }
+
+    @Test
+    @DisplayName("calculateEffectiveStatus: no close date remains PENDING")
+    void testCalculateEffectiveStatus_NoDeadline() {
+        Exam exam = Exam.builder()
+                .openDate(Instant.now().minusSeconds(86400))
+                .closeDate(null)
+                .status(ExamStatus.PENDING)
+                .build();
+
+        assertEquals(ExamStatus.PENDING, ExamResponse.calculateEffectiveStatus(exam));
+    }
+
+    @Test
+    @DisplayName("calculateEffectiveStatus: past close date without completion is OVERDUE")
+    void testCalculateEffectiveStatus_Overdue() {
+        Exam exam = Exam.builder()
+                .openDate(Instant.now().minusSeconds(86400 * 5))
+                .closeDate(Instant.now().minusSeconds(86400))
+                .status(ExamStatus.PENDING)
+                .build();
+
+        assertEquals(ExamStatus.OVERDUE, ExamResponse.calculateEffectiveStatus(exam));
+    }
+
+    @Test
+    @DisplayName("calculateEffectiveStatus: past close date with finished attempt is GIVEN")
+    void testCalculateEffectiveStatus_CompletedPast() {
+        Exam exam = Exam.builder()
+                .openDate(Instant.now().minusSeconds(86400 * 5))
+                .closeDate(Instant.now().minusSeconds(86400))
+                .attemptsCount(1)
+                .completedAt(Instant.now().minusSeconds(86400 * 2))
+                .status(ExamStatus.GIVEN)
+                .build();
+
+        assertEquals(ExamStatus.GIVEN, ExamResponse.calculateEffectiveStatus(exam));
     }
 }

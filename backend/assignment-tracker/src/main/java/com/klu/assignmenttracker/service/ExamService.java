@@ -6,6 +6,8 @@ import com.klu.assignmenttracker.exception.ResourceNotFoundException;
 import com.klu.assignmenttracker.model.Exam;
 import com.klu.assignmenttracker.model.ExamStatus;
 import com.klu.assignmenttracker.repository.ExamRepository;
+import com.klu.assignmenttracker.model.User;
+import com.klu.assignmenttracker.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,20 +21,22 @@ import java.util.stream.Collectors;
 public class ExamService {
 
     private final ExamRepository examRepository;
+    private final UserRepository userRepository;
 
-    public ExamService(ExamRepository examRepository) {
+    public ExamService(ExamRepository examRepository, UserRepository userRepository) {
         this.examRepository = examRepository;
+        this.userRepository = userRepository;
     }
 
     /**
-     * Get all exams for a specific user.
-     * Always filters by userId - students cannot see other students' exams.
+     * Get all exams for a specific user (supports MongoDB ID or studentId).
      *
-     * @param userId the authenticated user's ID
+     * @param userId the authenticated user's ID or studentId
      * @return list of the user's exams
      */
     public List<ExamResponse> getExamsByUserId(String userId) {
-        return examRepository.findByUserId(userId)
+        String resolvedUserId = resolveUserId(userId);
+        return examRepository.findByUserId(resolvedUserId)
                 .stream()
                 .map(ExamResponse::fromExam)
                 .collect(Collectors.toList());
@@ -47,7 +51,8 @@ public class ExamService {
      * @throws ResourceNotFoundException if not found or belongs to another user
      */
     public ExamResponse getExamByIdAndUserId(String id, String userId) {
-        return examRepository.findByIdAndUserId(id, userId)
+        String resolvedUserId = resolveUserId(userId);
+        return examRepository.findByIdAndUserId(id, resolvedUserId)
                 .map(ExamResponse::fromExam)
                 .orElseThrow(() -> new ResourceNotFoundException("Exam", "id", id));
     }
@@ -55,12 +60,23 @@ public class ExamService {
     /**
      * Get summary metrics (total, given, pending, overdue) for a user's exams.
      *
-     * @param userId the authenticated user's ID
+     * @param userId the authenticated user's ID or studentId
      * @return summary response containing counts
      */
     public ExamSummaryResponse getExamSummaryByUserId(String userId) {
-        List<Exam> exams = examRepository.findByUserId(userId);
+        String resolvedUserId = resolveUserId(userId);
+        List<Exam> exams = examRepository.findByUserId(resolvedUserId);
         return calculateSummary(exams);
+    }
+
+    private String resolveUserId(String userIdOrStudentId) {
+        if (userIdOrStudentId == null || userIdOrStudentId.isBlank()) {
+            return userIdOrStudentId;
+        }
+        return userRepository.findById(userIdOrStudentId)
+                .or(() -> userRepository.findByStudentId(userIdOrStudentId))
+                .map(User::getId)
+                .orElse(userIdOrStudentId);
     }
 
     /**
@@ -85,7 +101,7 @@ public class ExamService {
         int overdue = 0;
 
         for (Exam exam : exams) {
-            ExamStatus status = exam.getStatus();
+            ExamStatus status = ExamResponse.calculateEffectiveStatus(exam);
             if (status == ExamStatus.GIVEN) {
                 given++;
             } else if (status == ExamStatus.OVERDUE) {

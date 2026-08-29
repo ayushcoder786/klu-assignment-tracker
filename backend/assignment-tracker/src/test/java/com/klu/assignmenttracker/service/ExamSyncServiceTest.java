@@ -145,7 +145,7 @@ class ExamSyncServiceTest {
                 .sumgrades(18.5)
                 .build();
 
-        when(moodleWebService.getQuizUserAttempts("valid-token", 701L))
+        when(moodleWebService.getQuizUserAttempts(eq("valid-token"), eq(701L), eq(9999L)))
                 .thenReturn(MoodleQuizAttemptsResponse.builder().attempts(List.of(attempt)).build());
 
         when(examRepository.findByUserIdAndMoodleQuizId(user.getId(), "701"))
@@ -190,7 +190,7 @@ class ExamSyncServiceTest {
         when(moodleWebService.getQuizzes("valid-token", List.of(101L)))
                 .thenReturn(MoodleQuizzesResponse.builder().quizzes(List.of(quizItem)).build());
 
-        when(moodleWebService.getQuizUserAttempts("valid-token", 702L))
+        when(moodleWebService.getQuizUserAttempts(eq("valid-token"), eq(702L), eq(9999L)))
                 .thenReturn(MoodleQuizAttemptsResponse.builder().attempts(List.of()).build());
 
         when(examRepository.findByUserIdAndMoodleQuizId(user.getId(), "702"))
@@ -228,7 +228,7 @@ class ExamSyncServiceTest {
         when(moodleWebService.getQuizzes("valid-token", List.of(101L)))
                 .thenReturn(MoodleQuizzesResponse.builder().quizzes(List.of(quizItem)).build());
 
-        when(moodleWebService.getQuizUserAttempts("valid-token", 703L))
+        when(moodleWebService.getQuizUserAttempts(eq("valid-token"), eq(703L), eq(9999L)))
                 .thenReturn(MoodleQuizAttemptsResponse.builder().attempts(List.of()).build());
 
         when(examRepository.findByUserIdAndMoodleQuizId(user.getId(), "703"))
@@ -261,7 +261,7 @@ class ExamSyncServiceTest {
         when(moodleWebService.getQuizzes("valid-token", List.of(101L)))
                 .thenReturn(MoodleQuizzesResponse.builder().quizzes(List.of(quizItem)).build());
 
-        when(moodleWebService.getQuizUserAttempts("valid-token", 704L))
+        when(moodleWebService.getQuizUserAttempts(eq("valid-token"), eq(704L), eq(9999L)))
                 .thenReturn(MoodleQuizAttemptsResponse.builder().attempts(List.of()).build());
 
         when(examRepository.findByUserIdAndMoodleQuizId(user.getId(), "704"))
@@ -278,7 +278,7 @@ class ExamSyncServiceTest {
     }
 
     @Test
-    @DisplayName("5. Upcoming Exam: timeopen in future is safely marked PENDING")
+    @DisplayName("5. Upcoming Exam: timeopen in future is marked UPCOMING")
     void testSyncExams_Upcoming() {
         User user = setupUserAndCommonMocks();
 
@@ -295,7 +295,7 @@ class ExamSyncServiceTest {
         when(moodleWebService.getQuizzes("valid-token", List.of(101L)))
                 .thenReturn(MoodleQuizzesResponse.builder().quizzes(List.of(quizItem)).build());
 
-        when(moodleWebService.getQuizUserAttempts("valid-token", 705L))
+        when(moodleWebService.getQuizUserAttempts(eq("valid-token"), eq(705L), eq(9999L)))
                 .thenReturn(MoodleQuizAttemptsResponse.builder().attempts(List.of()).build());
 
         when(examRepository.findByUserIdAndMoodleQuizId(user.getId(), "705"))
@@ -307,7 +307,7 @@ class ExamSyncServiceTest {
         verify(examRepository).save(examCaptor.capture());
 
         Exam savedExam = examCaptor.getValue();
-        assertEquals(ExamStatus.PENDING, savedExam.getStatus());
+        assertEquals(ExamStatus.UPCOMING, savedExam.getStatus());
         assertTrue(savedExam.getOpenDate().isAfter(Instant.now()));
     }
 
@@ -328,7 +328,7 @@ class ExamSyncServiceTest {
         when(moodleWebService.getQuizzes("valid-token", List.of(101L)))
                 .thenReturn(MoodleQuizzesResponse.builder().quizzes(List.of(quizItem)).build());
 
-        when(moodleWebService.getQuizUserAttempts("valid-token", 706L))
+        when(moodleWebService.getQuizUserAttempts(eq("valid-token"), eq(706L), eq(9999L)))
                 .thenReturn(MoodleQuizAttemptsResponse.builder().attempts(List.of()).build());
 
         Exam existingExam = Exam.builder()
@@ -387,7 +387,7 @@ class ExamSyncServiceTest {
                 .sumgrades(19.0) // Higher score on retake
                 .build();
 
-        when(moodleWebService.getQuizUserAttempts("valid-token", 707L))
+        when(moodleWebService.getQuizUserAttempts(eq("valid-token"), eq(707L), eq(9999L)))
                 .thenReturn(MoodleQuizAttemptsResponse.builder().attempts(List.of(attempt1, attempt2)).build());
 
         when(examRepository.findByUserIdAndMoodleQuizId(user.getId(), "707"))
@@ -405,7 +405,38 @@ class ExamSyncServiceTest {
     }
 
     @Test
-    @DisplayName("8. Fault tolerance: LMS exception during quiz retrieval does not abort overall sync")
+    @DisplayName("8. Multiple Quizzes: Synchronizes all quizzes in a course (e.g. CO-1_1_QUIZ_1 to CO-1_1_QUIZ_5)")
+    void testSyncExams_MultipleQuizzesInCourse() {
+        User user = setupUserAndCommonMocks();
+
+        long nowSec = Instant.now().getEpochSecond();
+        List<MoodleQuizItem> quizItems = List.of(
+                MoodleQuizItem.builder().id(801L).course(101L).name("CO-1_1_QUIZ_1").timeopen(nowSec - 3600).timeclose(nowSec + 3600).grade(10.0).build(),
+                MoodleQuizItem.builder().id(802L).course(101L).name("CO-1_1_QUIZ_2").timeopen(nowSec - 3600).timeclose(nowSec + 3600).grade(10.0).build(),
+                MoodleQuizItem.builder().id(803L).course(101L).name("CO-1_1_QUIZ_3").timeopen(nowSec - 3600).timeclose(nowSec + 3600).grade(10.0).build(),
+                MoodleQuizItem.builder().id(804L).course(101L).name("CO-1_1_QUIZ_4").timeopen(nowSec - 3600).timeclose(nowSec + 3600).grade(10.0).build(),
+                MoodleQuizItem.builder().id(805L).course(101L).name("CO-1_1_QUIZ_5").timeopen(nowSec - 3600).timeclose(nowSec + 3600).grade(10.0).build()
+        );
+
+        when(moodleWebService.getQuizzes("valid-token", List.of(101L)))
+                .thenReturn(MoodleQuizzesResponse.builder().quizzes(quizItems).build());
+
+        when(moodleWebService.getQuizUserAttempts(eq("valid-token"), anyLong(), eq(9999L)))
+                .thenReturn(MoodleQuizAttemptsResponse.builder().attempts(List.of()).build());
+
+        when(examRepository.findByUserIdAndMoodleQuizId(eq(user.getId()), anyString()))
+                .thenReturn(Optional.empty());
+
+        SyncResponse response = syncService.syncUserAssignments(user, "valid-token");
+
+        assertNotNull(response);
+        verify(examRepository, times(5)).save(any(Exam.class));
+        assertEquals(5, response.getSyncLog().getExamsFound());
+        assertTrue(response.getMessage().contains("5 e-exams/tests"));
+    }
+
+    @Test
+    @DisplayName("9. Fault tolerance: LMS exception during quiz retrieval does not abort overall sync")
     void testSyncExams_LmsErrorHandledGracefully() {
         User user = setupUserAndCommonMocks();
 
@@ -418,5 +449,99 @@ class ExamSyncServiceTest {
         // User sync should complete successfully for courses & assignments without crashing
         assertNotNull(user.getLastSync());
         verify(userRepository).save(user);
+    }
+
+    @Test
+    @DisplayName("10. Multi-Course Quiz Sync: Retrieves and saves quizzes across different enrolled courses")
+    void testSyncExams_MultipleCourses() {
+        User user = User.builder().id("user-123").studentId("2200030001").role(Role.STUDENT).build();
+        SyncLog dummyLog = SyncLog.builder().id("log-1").userId(user.getId()).status(SyncStatus.RUNNING).build();
+        when(syncLogRepository.save(any(SyncLog.class))).thenReturn(dummyLog);
+
+        MoodleSiteInfo siteInfo = MoodleSiteInfo.builder().userid(9999L).fullname("Test Student").build();
+        when(moodleWebService.getSiteInfo("valid-token")).thenReturn(siteInfo);
+
+        MoodleCourse course1 = MoodleCourse.builder().id(101L).fullname("Course 101").shortname("C1").build();
+        MoodleCourse course2 = MoodleCourse.builder().id(102L).fullname("Course 102").shortname("C2").build();
+        when(moodleWebService.getEnrolledCourses("valid-token", 9999L)).thenReturn(List.of(course1, course2));
+
+        Course c1 = Course.builder().id("c1").userId(user.getId()).moodleCourseId("101").name("Course 101").build();
+        Course c2 = Course.builder().id("c2").userId(user.getId()).moodleCourseId("102").name("Course 102").build();
+        when(courseRepository.findByUserIdAndMoodleCourseId(user.getId(), "101")).thenReturn(Optional.of(c1));
+        when(courseRepository.findByUserIdAndMoodleCourseId(user.getId(), "102")).thenReturn(Optional.of(c2));
+        when(courseRepository.save(any(Course.class))).thenReturn(c1, c2);
+
+        when(moodleWebService.getAssignments(eq("valid-token"), anyList()))
+                .thenReturn(MoodleAssignmentsResponse.builder().courses(List.of()).build());
+
+        when(userRepository.save(any(User.class))).thenReturn(user);
+
+        MoodleQuizItem q1 = MoodleQuizItem.builder().id(901L).course(101L).name("C1 Quiz").build();
+        MoodleQuizItem q2 = MoodleQuizItem.builder().id(902L).course(102L).name("C2 Quiz").build();
+
+        when(moodleWebService.getQuizzes(eq("valid-token"), anyList()))
+                .thenReturn(MoodleQuizzesResponse.builder().quizzes(List.of(q1, q2)).build());
+
+        when(moodleWebService.getQuizUserAttempts(eq("valid-token"), anyLong(), eq(9999L)))
+                .thenReturn(MoodleQuizAttemptsResponse.builder().attempts(List.of()).build());
+
+        when(examRepository.findByUserIdAndMoodleQuizId(eq(user.getId()), anyString()))
+                .thenReturn(Optional.empty());
+
+        SyncResponse response = syncService.syncUserAssignments(user, "valid-token");
+
+        assertNotNull(response);
+        verify(examRepository, times(2)).save(any(Exam.class));
+        assertEquals(2, response.getSyncLog().getExamsFound());
+    }
+
+    @Test
+    @DisplayName("11. Best Grade API: Uses mod_quiz_get_user_best_grade when official grade exists")
+    void testSyncExams_BestGradeFallback() {
+        User user = setupUserAndCommonMocks();
+
+        MoodleQuizItem quizItem = MoodleQuizItem.builder()
+                .id(708L)
+                .course(101L)
+                .name("Graded Test")
+                .grade(10.0)
+                .build();
+
+        when(moodleWebService.getQuizzes("valid-token", List.of(101L)))
+                .thenReturn(MoodleQuizzesResponse.builder().quizzes(List.of(quizItem)).build());
+
+        // Attempts list empty, but best grade API returns graded score
+        when(moodleWebService.getQuizUserAttempts(eq("valid-token"), eq(708L), eq(9999L)))
+                .thenReturn(MoodleQuizAttemptsResponse.builder().attempts(List.of()).build());
+
+        when(moodleWebService.getQuizUserBestGrade(eq("valid-token"), eq(708L), eq(9999L)))
+                .thenReturn(MoodleQuizBestGradeResponse.builder().hasgrade(true).grade(9.5).build());
+
+        when(examRepository.findByUserIdAndMoodleQuizId(user.getId(), "708"))
+                .thenReturn(Optional.empty());
+
+        syncService.syncUserAssignments(user, "valid-token");
+
+        ArgumentCaptor<Exam> examCaptor = ArgumentCaptor.forClass(Exam.class);
+        verify(examRepository).save(examCaptor.capture());
+
+        Exam savedExam = examCaptor.getValue();
+        assertEquals(ExamStatus.GIVEN, savedExam.getStatus());
+        assertEquals(9.5, savedExam.getObtainedGrade());
+    }
+
+    @Test
+    @DisplayName("12. Zero Quizzes: Safely completes sync when courses have no quizzes")
+    void testSyncExams_ZeroQuizzes() {
+        User user = setupUserAndCommonMocks();
+
+        when(moodleWebService.getQuizzes("valid-token", List.of(101L)))
+                .thenReturn(MoodleQuizzesResponse.builder().quizzes(List.of()).build());
+
+        SyncResponse response = syncService.syncUserAssignments(user, "valid-token");
+
+        assertNotNull(response);
+        assertEquals(0, response.getSyncLog().getExamsFound());
+        verify(examRepository, never()).save(any(Exam.class));
     }
 }

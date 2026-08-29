@@ -1,10 +1,12 @@
 export type ExamStatus =
   | 'given'
   | 'pending'
+  | 'upcoming'
   | 'overdue'
   | 'completed'
   | 'GIVEN'
   | 'PENDING'
+  | 'UPCOMING'
   | 'OVERDUE'
   | 'COMPLETED';
 

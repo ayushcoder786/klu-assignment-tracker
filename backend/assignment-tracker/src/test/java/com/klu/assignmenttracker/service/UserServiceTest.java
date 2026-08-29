@@ -218,4 +218,81 @@ class UserServiceTest {
         assertThrows(com.klu.assignmenttracker.exception.LmsUnavailableException.class,
                 () -> userService.studentLogin(request));
     }
+
+    @Test
+    void testGetAllUsers_FiltersOutTestAndDummyAccounts() {
+        User legitStudent1 = User.builder()
+                .id("u1")
+                .studentId("2200030001")
+                .name("Rahul Sharma")
+                .role(Role.STUDENT)
+                .build();
+
+        User legitStudent2 = User.builder()
+                .id("u2")
+                .studentId("2500032102")
+                .name("AYUSH KUMAR 2500032102")
+                .role(Role.ADMIN)
+                .build();
+
+        User dummyUser1 = User.builder()
+                .id("d1")
+                .name("Dummy")
+                .email("dummy@gmail.com")
+                .role(Role.ADMIN)
+                .build();
+
+        User dummyUser2 = User.builder()
+                .id("d2")
+                .name("Dummy")
+                .email("dummy1@gmail.com")
+                .role(Role.ADMIN)
+                .build();
+
+        User integrationTestStudent = User.builder()
+                .id("d3")
+                .studentId("2200039999")
+                .name("Integration Test Student")
+                .role(Role.STUDENT)
+                .build();
+
+        User mockTestStudent = User.builder()
+                .id("d4")
+                .studentId("test_student_123")
+                .name("Test Student")
+                .email("test@example.com")
+                .role(Role.STUDENT)
+                .build();
+
+        when(userRepository.findAll()).thenReturn(java.util.List.of(
+                legitStudent1,
+                legitStudent2,
+                dummyUser1,
+                dummyUser2,
+                integrationTestStudent,
+                mockTestStudent
+        ));
+
+        java.util.List<com.klu.assignmenttracker.dto.UserResponse> result = userService.getAllUsers();
+
+        assertNotNull(result);
+        assertEquals(2, result.size(), "Only legitimate students should be returned");
+        assertEquals("2200030001", result.get(0).getStudentId());
+        assertEquals("2500032102", result.get(1).getStudentId());
+    }
+
+    @Test
+    void testIsTestAccount_IdentifiesDummyAndTestAccounts() {
+        assertTrue(UserService.isTestAccount(User.builder().name("Dummy").email("dummy@gmail.com").build()));
+        assertTrue(UserService.isTestAccount(User.builder().name("Dummy").email("dummy1@gmail.com").build()));
+        assertTrue(UserService.isTestAccount(User.builder().studentId("2200039999").name("Integration Test Student").build()));
+        assertTrue(UserService.isTestAccount(User.builder().studentId("9999999999").build()));
+        assertTrue(UserService.isTestAccount(User.builder().email("test@example.com").build()));
+        assertTrue(UserService.isTestAccount(User.builder().name("Test Student").build()));
+        assertTrue(UserService.isTestAccount(null));
+
+        assertFalse(UserService.isTestAccount(User.builder().studentId("2200030001").name("Rahul Sharma").build()));
+        assertFalse(UserService.isTestAccount(User.builder().studentId("2500032102").name("Ayush Kumar").build()));
+        assertFalse(UserService.isTestAccount(User.builder().studentId("21BCE9999").name("Priya Patel").build()));
+    }
 }

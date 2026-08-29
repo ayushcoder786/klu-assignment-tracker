@@ -2,12 +2,13 @@ import type { Student } from '../types/user';
 import type { SyncLog, GlobalSyncStatus } from '../types/sync';
 import { API_BASE } from './apiConfig';
 import { authService } from './authService';
+import { isTestStudent, formatStudentDisplay } from '../utils/userUtils';
 
 // ─── Admin Service ────────────────────────────────────────────────────────────
 
 export const adminService = {
   /**
-   * Get all students/users from backend.
+   * Get all legitimate students from backend.
    * GET /api/admin/users
    */
   async getStudents(): Promise<Student[]> {
@@ -20,17 +21,19 @@ export const adminService = {
       });
       if (res.ok) {
         const data = await res.json();
-        return (data || []).map((u: any) => ({
-          id: u.id,
-          studentId: u.studentId || u.id,
-          name: u.name,
-          email: u.email,
-          role: u.role,
-          status: 'active' as const,
-          lastLogin: u.lastLogin,
-          lastSync: u.lastSync,
-          createdAt: u.createdAt,
-        }));
+        return (data || [])
+          .filter((u: any) => !isTestStudent(u))
+          .map((u: any) => ({
+            id: u.id,
+            studentId: u.studentId || u.id,
+            name: u.name,
+            email: u.email,
+            role: u.role,
+            status: 'active' as const,
+            lastLogin: u.lastLogin,
+            lastSync: u.lastSync,
+            createdAt: u.createdAt,
+          }));
       }
     } catch {
       // return empty array on failure
@@ -65,18 +68,24 @@ export const adminService = {
       });
       if (res.ok) {
         const data = await res.json();
-        return (data || []).map((l: any) => ({
-          id: l.id,
-          studentId: l.studentId || l.userId,
-          studentName: l.studentName || l.studentId || l.userId,
-          triggeredAt: l.startedAt || l.triggeredAt || l.createdAt || null,
-          completedAt: l.completedAt,
-          status: (l.status ? l.status.toLowerCase() : 'success') as SyncLog['status'],
-          assignmentsFetched: l.assignmentsFound || l.assignmentsFetched || 0,
-          assignmentsUpdated: l.assignmentsUpdated || 0,
-          triggeredBy: (l.triggeredBy ? l.triggeredBy.toLowerCase() : 'scheduled') as SyncLog['triggeredBy'],
-          errorMessage: l.errorMessage,
-        }));
+        return (data || [])
+          .filter((l: any) => !isTestStudent({ name: l.studentName, studentId: l.studentId }))
+          .map((l: any) => {
+            const { name, studentId } = formatStudentDisplay(l.studentName, l.studentId);
+            return {
+              id: l.id,
+              userId: l.userId,
+              studentId: studentId,
+              studentName: name,
+              triggeredAt: l.startedAt || l.triggeredAt || l.createdAt || null,
+              completedAt: l.completedAt,
+              status: (l.status ? l.status.toLowerCase() : 'success') as SyncLog['status'],
+              assignmentsFetched: l.assignmentsFound || l.assignmentsFetched || 0,
+              assignmentsUpdated: l.assignmentsUpdated || 0,
+              triggeredBy: (l.triggeredBy ? l.triggeredBy.toLowerCase() : 'scheduled') as SyncLog['triggeredBy'],
+              errorMessage: l.errorMessage,
+            };
+          });
       }
     } catch {
       // return empty array on failure
@@ -129,6 +138,48 @@ export const adminService = {
    */
   async triggerGlobalSync(): Promise<{ success: boolean; message: string }> {
     return { success: true, message: 'Global sync initiated for all registered students.' };
+  },
+
+  /**
+   * Get exams for a specific student (admin only).
+   * GET /api/admin/users/:id/exams
+   */
+  async getStudentExams(userId: string): Promise<any[]> {
+    try {
+      const res = await fetch(`${API_BASE}/admin/users/${userId}/exams`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...authService.authHeaders(),
+        },
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {
+      // return empty on error
+    }
+    return [];
+  },
+
+  /**
+   * Get exam summary for a specific student (admin only).
+   * GET /api/admin/users/:id/exams/summary
+   */
+  async getStudentExamSummary(userId: string): Promise<{ total: number; given: number; pending: number; overdue: number } | null> {
+    try {
+      const res = await fetch(`${API_BASE}/admin/users/${userId}/exams/summary`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...authService.authHeaders(),
+        },
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {
+      // return null on error
+    }
+    return null;
   },
 
   /**

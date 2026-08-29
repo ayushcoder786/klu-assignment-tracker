@@ -10,6 +10,7 @@ import com.klu.assignmenttracker.security.MoodleTokenCache;
 import com.klu.assignmenttracker.service.NotificationDispatchService;
 import com.klu.assignmenttracker.service.NotificationSchedulerService;
 import com.klu.assignmenttracker.service.SyncService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -103,6 +104,17 @@ public class Milestone5IntegrationTest {
         });
 
         jwtToken = jwtTokenProvider.generateToken(testStudent.getStudentId());
+    }
+
+    @AfterEach
+    void tearDown() {
+        pushSubscriptionRepository.deleteAll();
+        preferencesRepository.deleteAll();
+        sentNotificationRepository.deleteAll();
+        assignmentRepository.deleteAll();
+        if (testStudent != null && testStudent.getId() != null) {
+            userRepository.deleteById(testStudent.getId());
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -310,7 +322,9 @@ public class Milestone5IntegrationTest {
         notificationSchedulerService.runScheduledSync();
 
         // Verify syncUserAssignments was called for testStudent
-        verify(syncService, atLeastOnce()).syncUserAssignments(eq(testStudent), eq("moodle-test-token-active"));
+        verify(syncService, atLeastOnce()).syncUserAssignments(
+                argThat(u -> u != null && testStudent.getStudentId().equals(u.getStudentId())),
+                eq("moodle-test-token-active"));
 
         // Evict token
         moodleTokenCache.evictToken(testStudent.getId());

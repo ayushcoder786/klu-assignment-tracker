@@ -16,17 +16,17 @@ function StudentLayoutContent() {
   const displayName = getCleanStudentName(student?.name);
 
   return (
-    <div className="flex h-screen bg-[#070b14] overflow-hidden text-slate-100">
+    <div className="flex h-screen bg-slate-50 dark:bg-[#070b14] overflow-hidden text-slate-900 dark:text-slate-100 transition-colors duration-200">
       <StudentSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#070b14]">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50 dark:bg-[#070b14]">
         <Topbar
           title="Student Dashboard"
           subtitle={
             student ? (
               <div className="flex flex-col">
-                <span className="text-xs font-bold text-slate-200 leading-tight">{displayName}</span>
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-tight">{displayName}</span>
                 {student.studentId && (
-                  <span className="text-xs text-indigo-300 font-mono leading-normal mt-0.5">{student.studentId}</span>
+                  <span className="text-xs text-indigo-600 dark:text-indigo-300 font-mono leading-normal mt-0.5">{student.studentId}</span>
                 )}
               </div>
             ) : undefined
@@ -39,12 +39,12 @@ function StudentLayoutContent() {
 
         {/* Sync notification banners */}
         {lastSyncMessage && (
-          <div className="mx-4 sm:mx-6 mt-3 px-4 py-2.5 rounded-xl bg-emerald-950/70 border border-emerald-500/40 text-emerald-200 text-xs font-semibold flex items-center justify-between shadow-lg">
+          <div className="mx-4 sm:mx-6 mt-3 px-4 py-2.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 dark:bg-emerald-950/70 dark:border-emerald-500/40 dark:text-emerald-200 text-xs font-semibold flex items-center justify-between shadow-sm dark:shadow-lg">
             <span>✨ {lastSyncMessage}</span>
           </div>
         )}
         {lastSyncError && (
-          <div className="mx-4 sm:mx-6 mt-3 px-4 py-2.5 rounded-xl bg-amber-950/70 border border-amber-500/40 text-amber-200 text-xs font-semibold flex items-center justify-between shadow-lg">
+          <div className="mx-4 sm:mx-6 mt-3 px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-800 dark:bg-amber-950/70 dark:border-amber-500/40 dark:text-amber-200 text-xs font-semibold flex items-center justify-between shadow-sm dark:shadow-lg">
             <span>⚠️ {lastSyncError}</span>
           </div>
         )}

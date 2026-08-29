@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import {
   FiBookOpen, FiRefreshCw, FiBell, FiShield, FiArrowRight, FiCheckCircle,
 } from 'react-icons/fi';
+import { PWAInstallButton } from '../components/common/PWAInstallButton';
+import { ThemeToggle } from '../components/common/ThemeToggle';
 
 const features = [
   {
@@ -50,6 +52,8 @@ export default function Landing() {
           <span className="text-base font-bold text-white">KLU Assignment Tracker</span>
         </div>
         <div className="flex items-center gap-3">
+          <PWAInstallButton />
+          <ThemeToggle />
           <Link
             to="/login"
             className="px-5 py-2 text-sm font-semibold text-white bg-white/10 border border-white/15 rounded-xl hover:bg-white/15 transition-all duration-200"

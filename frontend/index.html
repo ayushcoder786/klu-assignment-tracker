@@ -25,6 +25,23 @@
     <meta property="og:title" content="KLU Assignment Tracker" />
     <meta property="og:description" content="Track all your KLU University assignments in one beautiful dashboard." />
     <meta property="og:type" content="website" />
+
+    <!-- Early Theme Script (prevents theme flicker) -->
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('klu_theme');
+          var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+          if (saved === 'light' || (!saved && prefersLight)) {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
+          } else {
+            document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

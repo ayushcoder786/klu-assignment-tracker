@@ -6,17 +6,24 @@ import com.klu.assignmenttracker.dto.moodle.MoodleAssignmentCourse;
 import com.klu.assignmenttracker.dto.moodle.MoodleAssignmentItem;
 import com.klu.assignmenttracker.dto.moodle.MoodleAssignmentsResponse;
 import com.klu.assignmenttracker.dto.moodle.MoodleCourse;
+import com.klu.assignmenttracker.dto.moodle.MoodleQuizAttempt;
+import com.klu.assignmenttracker.dto.moodle.MoodleQuizAttemptsResponse;
+import com.klu.assignmenttracker.dto.moodle.MoodleQuizItem;
+import com.klu.assignmenttracker.dto.moodle.MoodleQuizzesResponse;
 import com.klu.assignmenttracker.dto.moodle.MoodleSiteInfo;
 import com.klu.assignmenttracker.dto.moodle.MoodleSubmissionStatusResponse;
 import com.klu.assignmenttracker.exception.ResourceNotFoundException;
 import com.klu.assignmenttracker.model.Assignment;
 import com.klu.assignmenttracker.model.AssignmentStatus;
 import com.klu.assignmenttracker.model.Course;
+import com.klu.assignmenttracker.model.Exam;
+import com.klu.assignmenttracker.model.ExamStatus;
 import com.klu.assignmenttracker.model.SyncLog;
 import com.klu.assignmenttracker.model.SyncStatus;
 import com.klu.assignmenttracker.model.User;
 import com.klu.assignmenttracker.repository.AssignmentRepository;
 import com.klu.assignmenttracker.repository.CourseRepository;
+import com.klu.assignmenttracker.repository.ExamRepository;
 import com.klu.assignmenttracker.repository.SyncLogRepository;
 import com.klu.assignmenttracker.repository.UserRepository;
 import com.klu.assignmenttracker.security.MoodleTokenCache;
@@ -34,7 +41,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
- * Service that synchronizes courses and assignments directly from KLU Moodle Web Services.
+ * Service that synchronizes courses, assignments, and e-exams directly from KLU Moodle Web Services.
  */
 @Service
 public class SyncService {
@@ -45,6 +52,7 @@ public class SyncService {
     private final UserRepository userRepository;
     private final CourseRepository courseRepository;
     private final AssignmentRepository assignmentRepository;
+    private final ExamRepository examRepository;
     private final MoodleWebService moodleWebService;
     private final MoodleTokenCache moodleTokenCache;
 
@@ -52,12 +60,14 @@ public class SyncService {
                        UserRepository userRepository,
                        CourseRepository courseRepository,
                        AssignmentRepository assignmentRepository,
+                       ExamRepository examRepository,
                        MoodleWebService moodleWebService,
                        MoodleTokenCache moodleTokenCache) {
         this.syncLogRepository = syncLogRepository;
         this.userRepository = userRepository;
         this.courseRepository = courseRepository;
         this.assignmentRepository = assignmentRepository;
+        this.examRepository = examRepository;
         this.moodleWebService = moodleWebService;
         this.moodleTokenCache = moodleTokenCache;
     }
@@ -215,7 +225,74 @@ public class SyncService {
                 }
             }
 
-            // ── Step 4: Finalize User & SyncLog ───────────────────────────────
+            // ── Step 4: Get E-Exams / Quizzes for Courses ─────────────────────
+            int totalExams = 0;
+            if (!courseIdsToQuery.isEmpty()) {
+                try {
+                    MoodleQuizzesResponse quizzesResp = moodleWebService.getQuizzes(moodleToken, courseIdsToQuery);
+                    if (quizzesResp != null && quizzesResp.getQuizzes() != null) {
+                        for (MoodleQuizItem qItem : quizzesResp.getQuizzes()) {
+                            if (qItem.getId() == null) {
+                                continue;
+                            }
+                            // Skip hidden activities
+                            if (qItem.getVisible() != null && qItem.getVisible() == 0) {
+                                continue;
+                            }
+
+                            String moodleQuizId = String.valueOf(qItem.getId());
+                            String courseModuleId = qItem.getCoursemodule() != null ? String.valueOf(qItem.getCoursemodule()) : null;
+                            String moodleCourseId = qItem.getCourse() != null ? String.valueOf(qItem.getCourse()) : null;
+                            Course courseDoc = moodleCourseId != null ? savedCoursesByMoodleId.get(moodleCourseId) : null;
+                            String courseDocId = courseDoc != null ? courseDoc.getId() : null;
+                            String courseDisplayName = courseDoc != null ? courseDoc.getName() : "Course " + moodleCourseId;
+
+                            Instant openDate = parseTimestamp(qItem.getTimeopen());
+                            Instant closeDate = parseTimestamp(qItem.getTimeclose());
+
+                            // Check attempts & determine exam status
+                            ExamStatusInfo statusInfo = determineExamStatus(moodleToken, qItem.getId(), closeDate, qItem.getGrade());
+
+                            String cleanDescription = stripHtml(qItem.getIntro());
+                            String lmsUrl = (courseModuleId != null && !courseModuleId.isBlank())
+                                    ? "https://lms.kluniversity.in/mod/quiz/view.php?id=" + courseModuleId
+                                    : "https://lms.kluniversity.in/mod/quiz/view.php?q=" + moodleQuizId;
+
+                            Exam exam = examRepository
+                                    .findByUserIdAndMoodleQuizId(user.getId(), moodleQuizId)
+                                    .orElseGet(() -> Exam.builder()
+                                            .userId(user.getId())
+                                            .moodleQuizId(moodleQuizId)
+                                            .firstSeen(Instant.now())
+                                            .build());
+
+                            exam.setCourseModuleId(courseModuleId);
+                            exam.setCourseId(courseDocId);
+                            exam.setCourseName(courseDisplayName);
+                            exam.setTitle(qItem.getName() != null ? qItem.getName().trim() : "Untitled Exam");
+                            exam.setDescription(cleanDescription);
+                            exam.setOpenDate(openDate);
+                            exam.setCloseDate(closeDate);
+                            exam.setTimeLimit(qItem.getTimelimit());
+                            exam.setAttemptsAllowed(qItem.getAttempts());
+                            exam.setAttemptsCount(statusInfo.attemptsCount());
+                            exam.setMaxGrade(qItem.getGrade());
+                            exam.setObtainedGrade(statusInfo.obtainedGrade());
+                            exam.setLmsUrl(lmsUrl);
+                            exam.setStatus(statusInfo.status());
+                            exam.setCompletedAt(statusInfo.completedAt());
+                            exam.setLastChecked(Instant.now());
+
+                            examRepository.save(exam);
+                            totalExams++;
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Could not synchronize quizzes from Moodle for studentId={}: {}", user.getStudentId(), e.getMessage());
+                }
+            }
+
+            // ── Step 5: Finalize User & SyncLog ───────────────────────────────
             user.setLastSync(Instant.now());
             userRepository.save(user);
 
@@ -225,12 +302,16 @@ public class SyncService {
             syncLog.setErrorMessage(null);
             SyncLog savedLog = syncLogRepository.save(syncLog);
 
-            log.info("Moodle assignment synchronization completed successfully for studentId={}. Total assignments: {}",
-                    user.getStudentId(), totalAssignments);
+            log.info("Moodle synchronization completed successfully for studentId={}. Total assignments: {}, Total e-exams: {}",
+                    user.getStudentId(), totalAssignments, totalExams);
+
+            String syncMessage = (totalExams > 0)
+                    ? "Successfully synchronized " + totalAssignments + " assignments and " + totalExams + " e-exams from KLU Moodle."
+                    : "Successfully synchronized " + totalAssignments + " assignments from KLU Moodle.";
 
             return SyncResponse.builder()
-                    .message("Successfully synchronized " + totalAssignments + " assignments from KLU Moodle.")
-                    .syncLog(SyncLogResponse.fromSyncLog(savedLog))
+                    .message(syncMessage)
+                    .syncLog(SyncLogResponse.fromSyncLog(savedLog, user))
                     .build();
 
         } catch (Exception e) {
@@ -244,7 +325,7 @@ public class SyncService {
 
             return SyncResponse.builder()
                     .message("LMS is temporarily unavailable. Please try syncing again later.")
-                    .syncLog(SyncLogResponse.fromSyncLog(savedLog))
+                    .syncLog(SyncLogResponse.fromSyncLog(savedLog, user))
                     .build();
         }
     }
@@ -282,7 +363,7 @@ public class SyncService {
 
         return SyncResponse.builder()
                 .message("Sync skipped: No active LMS session token in memory. Please log in again to refresh from KLU LMS.")
-                .syncLog(SyncLogResponse.fromSyncLog(savedLog))
+                .syncLog(SyncLogResponse.fromSyncLog(savedLog, user))
                 .build();
     }
 
@@ -297,11 +378,16 @@ public class SyncService {
 
     /**
      * Get all sync logs across all users (admin only).
+     * Maps each sync log with the corresponding student/user details.
      */
     public List<SyncLogResponse> getAllSyncLogs() {
+        Map<String, User> userMap = userRepository.findAll().stream()
+                .filter(u -> u.getId() != null)
+                .collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
+
         return syncLogRepository.findAllByOrderByStartedAtDesc()
                 .stream()
-                .map(SyncLogResponse::fromSyncLog)
+                .map(log -> SyncLogResponse.fromSyncLog(log, userMap.get(log.getUserId())))
                 .collect(Collectors.toList());
     }
 
@@ -309,9 +395,10 @@ public class SyncService {
      * Get sync logs for a specific user.
      */
     public List<SyncLogResponse> getSyncLogsByUserId(String userId) {
+        User user = userRepository.findById(userId).orElse(null);
         return syncLogRepository.findByUserIdOrderByStartedAtDesc(userId)
                 .stream()
-                .map(SyncLogResponse::fromSyncLog)
+                .map(log -> SyncLogResponse.fromSyncLog(log, user))
                 .collect(Collectors.toList());
     }
 
@@ -341,6 +428,51 @@ public class SyncService {
 
         return AssignmentStatus.PENDING;
     }
+
+    private ExamStatusInfo determineExamStatus(String moodleToken, long quizId, Instant closeDate, Double maxGrade) {
+        MoodleQuizAttemptsResponse attemptsResp = moodleWebService.getQuizUserAttempts(moodleToken, quizId);
+
+        int attemptsCount = 0;
+        boolean isGiven = false;
+        Double bestGrade = null;
+        Instant completedAt = null;
+
+        if (attemptsResp != null && attemptsResp.getAttempts() != null && !attemptsResp.getAttempts().isEmpty()) {
+            attemptsCount = attemptsResp.getAttempts().size();
+            for (MoodleQuizAttempt attempt : attemptsResp.getAttempts()) {
+                boolean finished = "finished".equalsIgnoreCase(attempt.getState())
+                        || (attempt.getTimefinish() != null && attempt.getTimefinish() > 0);
+
+                if (finished) {
+                    isGiven = true;
+                    if (attempt.getTimefinish() != null && attempt.getTimefinish() > 0) {
+                        Instant finishTime = Instant.ofEpochSecond(attempt.getTimefinish());
+                        if (completedAt == null || finishTime.isAfter(completedAt)) {
+                            completedAt = finishTime;
+                        }
+                    }
+                    if (attempt.getSumgrades() != null) {
+                        if (bestGrade == null || attempt.getSumgrades() > bestGrade) {
+                            bestGrade = attempt.getSumgrades();
+                        }
+                    }
+                }
+            }
+        }
+
+        if (isGiven) {
+            return new ExamStatusInfo(ExamStatus.GIVEN, bestGrade, attemptsCount, completedAt);
+        }
+
+        // If not completed, check if close deadline has passed
+        if (closeDate != null && closeDate.isBefore(Instant.now())) {
+            return new ExamStatusInfo(ExamStatus.OVERDUE, null, attemptsCount, null);
+        }
+
+        return new ExamStatusInfo(ExamStatus.PENDING, null, attemptsCount, null);
+    }
+
+    private record ExamStatusInfo(ExamStatus status, Double obtainedGrade, Integer attemptsCount, Instant completedAt) {}
 
     private Instant parseTimestamp(Long epochSeconds) {
         if (epochSeconds == null || epochSeconds <= 0) {

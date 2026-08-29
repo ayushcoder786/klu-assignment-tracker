@@ -33,16 +33,16 @@ interface ToggleProps {
 
 function ToggleSetting({ id, label, description, checked, onChange, disabled }: ToggleProps) {
   return (
-    <div className={`flex items-center gap-4 py-4 border-b border-slate-800 last:border-0 ${disabled ? 'opacity-40' : ''}`}>
+    <div className={`flex items-center gap-4 py-4 border-b border-slate-200 dark:border-slate-800 last:border-0 ${disabled ? 'opacity-40' : ''}`}>
       <div className="flex-1">
-        <p className="text-sm font-bold text-white">{label}</p>
-        <p className="text-xs text-slate-300 font-medium mt-0.5">{description}</p>
+        <p className="text-sm font-bold text-slate-900 dark:text-white">{label}</p>
+        <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-0.5">{description}</p>
       </div>
       <button
         id={id}
         disabled={disabled}
         onClick={() => !disabled && onChange(!checked)}
-        className={`relative w-11 h-6 rounded-full transition-colors duration-300 cursor-pointer ${checked ? 'bg-violet-600' : 'bg-slate-800 border border-slate-700'} disabled:cursor-not-allowed`}
+        className={`relative w-11 h-6 rounded-full transition-colors duration-300 cursor-pointer ${checked ? 'bg-violet-600' : 'bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700'} disabled:cursor-not-allowed`}
         aria-checked={checked}
         role="switch"
       >
@@ -58,10 +58,10 @@ type PermissionState = NotificationPermission | 'unsupported';
 
 function PermissionBadge({ state }: { state: PermissionState }) {
   const configs: Record<PermissionState, { label: string; color: string }> = {
-    granted: { label: 'Allowed', color: 'text-emerald-300 bg-emerald-950/80 border-emerald-500/40 font-bold' },
-    denied: { label: 'Blocked', color: 'text-red-300 bg-red-950/80 border-red-500/40 font-bold' },
-    default: { label: 'Not set', color: 'text-slate-300 bg-slate-800 border-slate-700 font-bold' },
-    unsupported: { label: 'Unsupported', color: 'text-amber-300 bg-amber-950/80 border-amber-500/40 font-bold' },
+    granted: { label: 'Allowed', color: 'text-emerald-800 bg-emerald-50 border-emerald-300 dark:text-emerald-300 dark:bg-emerald-950/80 dark:border-emerald-500/40 font-bold' },
+    denied: { label: 'Blocked', color: 'text-red-800 bg-red-50 border-red-300 dark:text-red-300 dark:bg-red-950/80 dark:border-red-500/40 font-bold' },
+    default: { label: 'Not set', color: 'text-slate-700 bg-slate-100 border-slate-300 dark:text-slate-300 dark:bg-slate-800 dark:border-slate-700 font-bold' },
+    unsupported: { label: 'Unsupported', color: 'text-amber-800 bg-amber-50 border-amber-300 dark:text-amber-300 dark:bg-amber-950/80 dark:border-amber-500/40 font-bold' },
   };
   const { label, color } = configs[state];
   return (
@@ -227,25 +227,25 @@ export default function Settings() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h2 className="text-2xl font-extrabold text-white">Settings</h2>
-        <p className="text-slate-400 text-sm mt-1">Manage your preferences and account</p>
+        <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">Settings</h2>
+        <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">Manage your preferences and account</p>
       </div>
 
       {/* ── LMS Sync ─────────────────────────────────────────────────────── */}
       <Card>
-        <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-4">Data Synchronization</h3>
-        <p className="text-sm text-slate-400 mb-4 leading-relaxed">
+        <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-4">Data Synchronization</h3>
+        <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
           Manually trigger a sync to fetch the latest assignments and courses directly from KLU Moodle LMS.
           The system also automatically syncs every 30 minutes while you are logged in.
         </p>
         {lastSyncMessage && (
-          <div className="flex items-start gap-2.5 p-3.5 rounded-xl mb-4 text-sm bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
+          <div className="flex items-start gap-2.5 p-3.5 rounded-xl mb-4 text-sm bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-300 dark:border-emerald-500/20 text-emerald-800 dark:text-emerald-300">
             <FiCheckCircle size={17} className="shrink-0 mt-0.5" />
             <p>{lastSyncMessage}</p>
           </div>
         )}
         {lastSyncError && (
-          <div className="flex items-start gap-2.5 p-3.5 rounded-xl mb-4 text-sm bg-red-500/10 border border-red-500/20 text-red-300">
+          <div className="flex items-start gap-2.5 p-3.5 rounded-xl mb-4 text-sm bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/20 text-red-800 dark:text-red-300">
             <FiAlertCircle size={17} className="shrink-0 mt-0.5" />
             <p>{lastSyncError}</p>
           </div>
@@ -258,19 +258,19 @@ export default function Settings() {
       {/* ── Push Notifications ────────────────────────────────────────────── */}
       <Card>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Push Notifications</h3>
+          <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Push Notifications</h3>
           <PermissionBadge state={permissionState} />
         </div>
 
         {/* Success / Error feedback */}
         {notifSuccess && (
-          <div className="flex items-start gap-2.5 p-3.5 rounded-xl mb-4 text-sm bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
+          <div className="flex items-start gap-2.5 p-3.5 rounded-xl mb-4 text-sm bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-300 dark:border-emerald-500/20 text-emerald-800 dark:text-emerald-300">
             <FiCheckCircle size={17} className="shrink-0 mt-0.5" />
             <p>{notifSuccess}</p>
           </div>
         )}
         {notifError && (
-          <div className="flex items-start gap-2.5 p-3.5 rounded-xl mb-4 text-sm bg-red-500/10 border border-red-500/20 text-red-300">
+          <div className="flex items-start gap-2.5 p-3.5 rounded-xl mb-4 text-sm bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/20 text-red-800 dark:text-red-300">
             <FiAlertCircle size={17} className="shrink-0 mt-0.5" />
             <p>{notifError}</p>
           </div>
@@ -278,28 +278,28 @@ export default function Settings() {
 
         {/* Browser unsupported */}
         {!pushSupported ? (
-          <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-500/8 border border-amber-500/20">
-            <FiInfo size={18} className="text-amber-400 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/8 border border-amber-300 dark:border-amber-500/20">
+            <FiInfo size={18} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-amber-200">Not supported in this browser</p>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">Not supported in this browser</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
                 Push notifications require a modern browser with service worker support (Chrome, Firefox, Edge, Safari 16.4+).
               </p>
             </div>
           </div>
         ) : !pushServiceAvailable ? (
-          <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-500/8 border border-amber-500/20">
-            <FiInfo size={18} className="text-amber-400 shrink-0 mt-0.5" />
-            <p className="text-sm text-amber-200">
+          <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/8 border border-amber-300 dark:border-amber-500/20">
+            <FiInfo size={18} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <p className="text-sm text-amber-800 dark:text-amber-200">
               Push notifications are not configured on the server yet. Set the VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY environment variables to enable them.
             </p>
           </div>
         ) : permissionState === 'denied' ? (
-          <div className="flex items-start gap-3 p-4 rounded-2xl bg-red-500/8 border border-red-500/20">
-            <FiAlertCircle size={18} className="text-red-400 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-3 p-4 rounded-2xl bg-red-50 dark:bg-red-500/8 border border-red-300 dark:border-red-500/20">
+            <FiAlertCircle size={18} className="text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-semibold text-red-300 mb-1">Notifications blocked by browser</p>
-              <p className="text-xs text-slate-400">
+              <p className="text-sm font-semibold text-red-800 dark:text-red-300 mb-1">Notifications blocked by browser</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
                 You previously denied notifications. To re-enable them, click the lock/info icon in
                 your browser's address bar, set Notifications to "Allow", then reload the page.
               </p>
@@ -307,17 +307,17 @@ export default function Settings() {
           </div>
         ) : (
           <div className="space-y-4">
-            <p className="text-sm text-slate-400 leading-relaxed">
+            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
               Receive assignment reminders on this device even when the app is not open.
               Notifications are delivered by your browser's push service — no personal data is shared.
             </p>
-            <div className="flex items-center justify-between py-3 border-b border-white/5">
+            <div className="flex items-center justify-between py-3 border-b border-slate-200 dark:border-white/5">
               <div className="flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isSubscribed ? 'bg-violet-500/15 text-violet-400' : 'bg-white/5 text-slate-400'}`}>
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isSubscribed ? 'bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-400' : 'bg-slate-100 text-slate-600 dark:bg-white/5 dark:text-slate-400'}`}>
                   <FiSmartphone size={17} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-white">This device</p>
+                  <p className="text-sm font-medium text-slate-900 dark:text-white">This device</p>
                   <p className="text-xs text-slate-500">{isSubscribed ? 'Notifications active on this device' : 'Not subscribed'}</p>
                 </div>
               </div>
@@ -325,7 +325,7 @@ export default function Settings() {
                 <button
                   onClick={handleDisableNotifications}
                   disabled={notifLoading}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-red-400 hover:text-red-300 transition-colors cursor-pointer disabled:opacity-50"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors cursor-pointer disabled:opacity-50"
                 >
                   <FiToggleRight size={18} />
                   Disable
@@ -358,8 +358,8 @@ export default function Settings() {
       {pushSupported && prefsLoaded && (
         <Card>
           <div className="flex items-center justify-between mb-1">
-            <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Notification Preferences</h3>
-            {prefsSaving && <span className="text-xs text-violet-400">Saving…</span>}
+            <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Notification Preferences</h3>
+            {prefsSaving && <span className="text-xs text-violet-600 dark:text-violet-400">Saving…</span>}
           </div>
           <p className="text-xs text-slate-500 mb-3">
             Choose which events you want to be notified about. Changes are saved automatically.

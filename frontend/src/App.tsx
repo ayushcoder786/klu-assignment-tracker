@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { StudentLayout } from './layouts/StudentLayout';
 import { AdminLayout } from './layouts/AdminLayout';
@@ -10,6 +11,8 @@ import Login from './pages/student/Login';
 import StudentDashboard from './pages/student/Dashboard';
 import AssignmentList from './pages/student/AssignmentList';
 import AssignmentDetail from './pages/student/AssignmentDetail';
+import ExamList from './pages/student/ExamList';
+import ExamDetail from './pages/student/ExamDetail';
 import Profile from './pages/student/Profile';
 import Settings from './pages/student/Settings';
 
@@ -62,6 +65,8 @@ function AppRoutes() {
         <Route path="/dashboard" element={<StudentDashboard />} />
         <Route path="/assignments" element={<AssignmentList />} />
         <Route path="/assignments/:id" element={<AssignmentDetail />} />
+        <Route path="/exams" element={<ExamList />} />
+        <Route path="/exams/:id" element={<ExamDetail />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
       </Route>
@@ -90,9 +95,11 @@ function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

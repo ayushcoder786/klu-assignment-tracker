@@ -252,11 +252,73 @@ public class UserService {
     }
 
     /**
+     * Identifies whether a User document represents a test, dummy, or integration test account.
+     *
+     * <p>Criteria for test/dummy accounts:
+     * <ul>
+     *   <li>Explicit test student IDs (e.g. "2200039999", "9999999999").</li>
+     *   <li>Student ID containing "test" or "dummy" (case-insensitive).</li>
+     *   <li>Name containing "dummy", "integration test", "test student", "test user" (case-insensitive).</li>
+     *   <li>Email matching dummy or mock test patterns (e.g. dummy@*, *@example.com, *@test.com, test@*).</li>
+     *   <li>Missing student ID with non-institutional email.</li>
+     * </ul>
+     *
+     * @param user the User entity to check
+     * @return true if the user is a test or dummy account, false if legitimate
+     */
+    public static boolean isTestAccount(User user) {
+        if (user == null) {
+            return true;
+        }
+
+        String studentId = user.getStudentId() != null ? user.getStudentId().trim().toLowerCase() : "";
+        String name = user.getName() != null ? user.getName().trim().toLowerCase() : "";
+        String email = user.getEmail() != null ? user.getEmail().trim().toLowerCase() : "";
+
+        // 1. Check known test student IDs or test ID patterns
+        if (studentId.equals("2200039999") || studentId.equals("9999999999")
+                || studentId.contains("test") || studentId.contains("dummy")) {
+            return true;
+        }
+
+        // 2. Check test/dummy name patterns
+        if (name.contains("dummy")
+                || name.contains("integration test")
+                || name.contains("test student")
+                || name.contains("test user")
+                || name.equals("test")
+                || name.startsWith("test ")
+                || name.startsWith("dummy ")) {
+            return true;
+        }
+
+        // 3. Check test/dummy email patterns
+        if (email.contains("dummy")
+                || email.endsWith("@example.com")
+                || email.endsWith("@test.com")
+                || email.endsWith("@localhost")
+                || email.startsWith("test@")
+                || email.startsWith("test.")
+                || email.startsWith("test_")) {
+            return true;
+        }
+
+        // 4. Accounts without studentId that are test accounts or not genuine student records
+        if (studentId.isEmpty() && !email.endsWith("@kluniversity.in")) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Get all users (admin only).
+     * Filters out test and dummy accounts so only genuine students/users are returned.
      */
     public List<UserResponse> getAllUsers() {
         return userRepository.findAll()
                 .stream()
+                .filter(user -> !isTestAccount(user))
                 .map(UserResponse::fromUser)
                 .collect(Collectors.toList());
     }

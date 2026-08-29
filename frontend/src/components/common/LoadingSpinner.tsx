@@ -28,7 +28,7 @@ export function LoadingSpinner({ size = 'md', text, fullPage = false }: LoadingS
 
   if (fullPage) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#070b14]">
         {spinner}
       </div>
     );
@@ -42,7 +42,7 @@ export function SkeletonRow({ cols = 4 }: { cols?: number }) {
       {Array.from({ length: cols }).map((_, i) => (
         <div
           key={i}
-          className="h-4 rounded-lg bg-slate-800"
+          className="h-4 rounded-lg bg-slate-200 dark:bg-slate-800"
           style={{ width: `${60 + (i % 3) * 15}%` }}
         />
       ))}

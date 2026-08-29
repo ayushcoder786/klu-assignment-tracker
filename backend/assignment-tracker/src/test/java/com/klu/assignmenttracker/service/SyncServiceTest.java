@@ -14,6 +14,7 @@ import com.klu.assignmenttracker.model.SyncStatus;
 import com.klu.assignmenttracker.model.User;
 import com.klu.assignmenttracker.repository.AssignmentRepository;
 import com.klu.assignmenttracker.repository.CourseRepository;
+import com.klu.assignmenttracker.repository.ExamRepository;
 import com.klu.assignmenttracker.repository.SyncLogRepository;
 import com.klu.assignmenttracker.repository.UserRepository;
 import com.klu.assignmenttracker.security.MoodleTokenCache;
@@ -49,6 +50,9 @@ class SyncServiceTest {
     private AssignmentRepository assignmentRepository;
 
     @Mock
+    private ExamRepository examRepository;
+
+    @Mock
     private MoodleWebService moodleWebService;
 
     @Mock
@@ -63,6 +67,7 @@ class SyncServiceTest {
                 userRepository,
                 courseRepository,
                 assignmentRepository,
+                examRepository,
                 moodleWebService,
                 moodleTokenCache
         );
@@ -192,5 +197,93 @@ class SyncServiceTest {
         assertEquals("LMS is temporarily unavailable. Please try syncing again later.", response.getMessage());
         // Verify lastSync was NOT modified or overwritten
         assertEquals(initialSync, user.getLastSync(), "Previous lastSync timestamp must be preserved on sync failure");
+    }
+
+    @Test
+    void testGetAllSyncLogs_MapsStudentNameAndId() {
+        User user1 = User.builder()
+                .id("u1")
+                .studentId("2500032102")
+                .name("AYUSH KUMAR 2500032102")
+                .role(Role.ADMIN)
+                .build();
+
+        User user2 = User.builder()
+                .id("u2")
+                .studentId("2200030001")
+                .name("Rahul Sharma")
+                .role(Role.STUDENT)
+                .build();
+
+        SyncLog log1 = SyncLog.builder()
+                .id("log-1")
+                .userId("u1")
+                .status(SyncStatus.SUCCESS)
+                .assignmentsFound(10)
+                .startedAt(Instant.now())
+                .build();
+
+        SyncLog log2 = SyncLog.builder()
+                .id("log-2")
+                .userId("u2")
+                .status(SyncStatus.SUCCESS)
+                .assignmentsFound(5)
+                .startedAt(Instant.now().minusSeconds(60))
+                .build();
+
+        SyncLog logOrphan = SyncLog.builder()
+                .id("log-3")
+                .userId("unknown-id")
+                .status(SyncStatus.FAILED)
+                .startedAt(Instant.now().minusSeconds(120))
+                .build();
+
+        when(userRepository.findAll()).thenReturn(List.of(user1, user2));
+        when(syncLogRepository.findAllByOrderByStartedAtDesc()).thenReturn(List.of(log1, log2, logOrphan));
+
+        List<com.klu.assignmenttracker.dto.SyncLogResponse> logs = syncService.getAllSyncLogs();
+
+        assertNotNull(logs);
+        assertEquals(3, logs.size());
+
+        // First log
+        assertEquals("log-1", logs.get(0).getId());
+        assertEquals("2500032102", logs.get(0).getStudentId());
+        assertEquals("AYUSH KUMAR 2500032102", logs.get(0).getStudentName());
+        assertEquals("u1", logs.get(0).getUserId());
+
+        // Second log
+        assertEquals("log-2", logs.get(1).getId());
+        assertEquals("2200030001", logs.get(1).getStudentId());
+        assertEquals("Rahul Sharma", logs.get(1).getStudentName());
+
+        // Orphaned log has fallback
+        assertEquals("log-3", logs.get(2).getId());
+        assertEquals("unknown-id", logs.get(2).getUserId());
+    }
+
+    @Test
+    void testGetSyncLogsByUserId_MapsStudentNameAndId() {
+        User user = User.builder()
+                .id("u1")
+                .studentId("2500032102")
+                .name("Ayush Kumar")
+                .build();
+
+        SyncLog log = SyncLog.builder()
+                .id("log-1")
+                .userId("u1")
+                .status(SyncStatus.SUCCESS)
+                .build();
+
+        when(userRepository.findById("u1")).thenReturn(Optional.of(user));
+        when(syncLogRepository.findByUserIdOrderByStartedAtDesc("u1")).thenReturn(List.of(log));
+
+        List<com.klu.assignmenttracker.dto.SyncLogResponse> logs = syncService.getSyncLogsByUserId("u1");
+
+        assertNotNull(logs);
+        assertEquals(1, logs.size());
+        assertEquals("2500032102", logs.get(0).getStudentId());
+        assertEquals("Ayush Kumar", logs.get(0).getStudentName());
     }
 }

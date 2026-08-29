@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.klu.assignmenttracker.dto.moodle.MoodleAssignmentsResponse;
 import com.klu.assignmenttracker.dto.moodle.MoodleCourse;
+import com.klu.assignmenttracker.dto.moodle.MoodleQuizAttemptsResponse;
+import com.klu.assignmenttracker.dto.moodle.MoodleQuizBestGradeResponse;
+import com.klu.assignmenttracker.dto.moodle.MoodleQuizzesResponse;
 import com.klu.assignmenttracker.dto.moodle.MoodleSiteInfo;
 import com.klu.assignmenttracker.dto.moodle.MoodleSubmissionStatusResponse;
 import com.klu.assignmenttracker.exception.LmsUnavailableException;
@@ -39,6 +42,9 @@ import java.util.StringJoiner;
  *   <li>{@code core_enrol_get_users_courses} — Courses student is enrolled in.</li>
  *   <li>{@code mod_assign_get_assignments} — Assignments for courses with due dates, cutoff dates.</li>
  *   <li>{@code mod_assign_get_submission_status} — Submission and completion status.</li>
+ *   <li>{@code mod_quiz_get_quizzes_by_courses} — E-Exams/quizzes for enrolled courses.</li>
+ *   <li>{@code mod_quiz_get_user_attempts} — Student attempts and completion state for an E-Exam.</li>
+ *   <li>{@code mod_quiz_get_user_best_grade} — Student best score/grade for an E-Exam.</li>
  * </ul>
  */
 @Service
@@ -141,6 +147,76 @@ public class MoodleWebService {
             return objectMapper.readValue(responseBody, MoodleSubmissionStatusResponse.class);
         } catch (Exception e) {
             log.warn("Could not retrieve submission status for assignId={}: {}", assignId, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Get all quizzes/e-exams for the specified course IDs.
+     *
+     * @param moodleToken active Moodle Web Service token
+     * @param courseIds   list of Moodle course IDs
+     * @return quizzes grouped or listed in MoodleQuizzesResponse
+     */
+    public MoodleQuizzesResponse getQuizzes(String moodleToken, List<Long> courseIds) {
+        if (courseIds == null || courseIds.isEmpty()) {
+            return MoodleQuizzesResponse.builder().quizzes(Collections.emptyList()).build();
+        }
+
+        List<ParamEntry> params = new ArrayList<>();
+        for (int i = 0; i < courseIds.size(); i++) {
+            params.add(new ParamEntry("courseids[" + i + "]", String.valueOf(courseIds.get(i))));
+        }
+
+        try {
+            String responseBody = executeCall(moodleToken, "mod_quiz_get_quizzes_by_courses", params);
+            return objectMapper.readValue(responseBody, MoodleQuizzesResponse.class);
+        } catch (Exception e) {
+            log.warn("Could not retrieve quizzes from Moodle: {}", e.getMessage());
+            return MoodleQuizzesResponse.builder().quizzes(Collections.emptyList()).build();
+        }
+    }
+
+    /**
+     * Get user attempts for a specific quiz/e-exam to determine completion and score.
+     *
+     * @param moodleToken active Moodle Web Service token
+     * @param quizId      the Moodle quiz ID
+     * @return user attempts details
+     */
+    public MoodleQuizAttemptsResponse getQuizUserAttempts(String moodleToken, long quizId) {
+        List<ParamEntry> params = List.of(
+                new ParamEntry("quizid", String.valueOf(quizId)),
+                new ParamEntry("status", "all"),
+                new ParamEntry("includepreviews", "0")
+        );
+        try {
+            String responseBody = executeCall(moodleToken, "mod_quiz_get_user_attempts", params);
+            return objectMapper.readValue(responseBody, MoodleQuizAttemptsResponse.class);
+        } catch (Exception e) {
+            log.warn("Could not retrieve user attempts for quizId={}: {}", quizId, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Get user best grade for a specific quiz/e-exam.
+     *
+     * @param moodleToken active Moodle Web Service token
+     * @param quizId      the Moodle quiz ID
+     * @param userId      the Moodle user ID
+     * @return best grade details
+     */
+    public MoodleQuizBestGradeResponse getQuizUserBestGrade(String moodleToken, long quizId, long userId) {
+        List<ParamEntry> params = List.of(
+                new ParamEntry("quizid", String.valueOf(quizId)),
+                new ParamEntry("userid", String.valueOf(userId))
+        );
+        try {
+            String responseBody = executeCall(moodleToken, "mod_quiz_get_user_best_grade", params);
+            return objectMapper.readValue(responseBody, MoodleQuizBestGradeResponse.class);
+        } catch (Exception e) {
+            log.debug("Could not retrieve best grade for quizId={}, userId={}: {}", quizId, userId, e.getMessage());
             return null;
         }
     }
